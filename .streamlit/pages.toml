@@ -1,0 +1,5 @@
+[[pages]]
+path = "Home.py"
+name = "Home"
+icon = "🏠"
+#url_path = "Home" # You can override the default url path for a page
