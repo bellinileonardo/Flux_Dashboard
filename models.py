@@ -5,6 +5,7 @@ import plotly.express as px
 
 ################## Engine Banco de Dados ####################
 
+# Cria pagina mais interativa para o Top Itens (Func. Gerada pelo Gemini)(Estudo)
 def exibir_aba_top20(data):
     """
     Renderiza a aba "Top 20", transformando-a em uma ferramenta de análise interativa.
@@ -145,6 +146,7 @@ def exibir_aba_top20(data):
         else:
             st.warning("Tabela vazia devido aos filtros aplicados.")
 
+# Primeira função de carregamento de dados, mais pesada(Estudo)
 @st.cache_data(ttl=6000, show_spinner="Fabricando dados solicitados... Aguarde...")
 def carregar_dados(file_csv,data_inicio, data_fim_query):
     # =================================================================================
@@ -170,6 +172,7 @@ def carregar_dados(file_csv,data_inicio, data_fim_query):
         st.error(f"Ocorreu um erro ao ler o arquivo CSV: {e}")
         st.stop()
 
+# Segunda função de carregamento de dados, csv menos dados(Estudo)
 def carregar_dados_extras(file_csv,data_inicio, data_fim_query):
     # =================================================================================
     # FUNÇÕES DE LÓGICA E EXIBIÇÃO
@@ -194,6 +197,14 @@ def carregar_dados_extras(file_csv,data_inicio, data_fim_query):
         st.error(f"Ocorreu um erro ao ler o arquivo CSV: {e}")
         st.stop()
 
+def dados_enviados_ia(data_ia):
+    data_ia = []
+    data_ia_gerada = pd.merge([data_ia])
+    return data_ia_gerada
+
+
+
+# Menu TOP para paginas do app
 def menu_top_page():
     with st.container():
         col_top_menu = st.columns(3)

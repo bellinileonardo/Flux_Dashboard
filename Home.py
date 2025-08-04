@@ -1,76 +1,80 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime
 import models as mdls
 import pandas as pd
-import streamlit_shadcn_ui as ui
 import locale
 import google.generativeai as genai # Para integração com Gemini
 import os # Para acessar a chave da API
-from streamlit_extras.customize_running import center_running
+#from streamlit_extras.customize_running import center_running
 
 
 
-center_running()
+#center_running()
 # --- Configuração da Página ---
-st.set_page_config(page_title="Flux Dash - IA",                   page_icon=":robot:",                   layout="wide",                   initial_sidebar_state="expanded"                   )
+with st.container():
+    st.set_page_config(page_title="Flux Dash - IA",                   
+                    page_icon=":robot:",                   
+                    layout="wide",                   
+                    initial_sidebar_state="expanded"                   
+                    )
 
-# --- Configuração de Localização (Locale) ---
-try:
-    # Tenta configurar para Português do Brasil (Linux/macOS)
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except locale.Error:
+    # --- Configuração de Localização (Locale) ---
     try:
-        # Fallback para Windows
-        locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
+        # Tenta configurar para Português do Brasil (Linux/macOS)
+        locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
     except locale.Error:
-        st.warning("Não foi possível definir o local para pt_BR. Usando formatação padrão para moeda.")
-        # Define um formatador manual simples como fallback se tudo falhar
-        def format_currency_fallback(value, grouping=False):
-             # Simples fallback, pode não ser perfeito para todos os casos
+        try:
+            # Fallback para Windows
+            locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
+        except locale.Error:
+            st.warning("Não foi possível definir o local para pt_BR. Usando formatação padrão para moeda.")
+            # Define um formatador manual simples como fallback se tudo falhar
+            def format_currency_fallback(value, grouping=False):
+                # Simples fallback, pode não ser perfeito para todos os casos
+                try:
+                    amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                    return f"R$ {amount}"
+                except (ValueError, TypeError):
+                    return "R$ N/A" # Retorna N/A se a conversão falhar
+            # Sobrescreve a função de moeda apenas se a configuração falhar
+            # Usar locale.format_string é geralmente mais robusto se o locale foi definido parcialmente
+            # Mas vamos usar o fallback simples para garantir que algo funcione.
+            st.session_state['currency_formatter'] = format_currency_fallback
+
+    # Função auxiliar para formatar moeda, usando o fallback se necessário
+    def format_currency(value, grouping=True):
+        if 'currency_formatter' in st.session_state:
+            return st.session_state['currency_formatter'](value, grouping=grouping)
+        else:
             try:
-                amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                return f"R$ {amount}"
+                # Tenta usar a função locale.currency padrão
+                return locale.currency(value, grouping=grouping, symbol='R$')# type: ignore
             except (ValueError, TypeError):
                 return "R$ N/A" # Retorna N/A se a conversão falhar
-        # Sobrescreve a função de moeda apenas se a configuração falhar
-        # Usar locale.format_string é geralmente mais robusto se o locale foi definido parcialmente
-        # Mas vamos usar o fallback simples para garantir que algo funcione.
-        st.session_state['currency_formatter'] = format_currency_fallback
 
-# Função auxiliar para formatar moeda, usando o fallback se necessário
-def format_currency(value, grouping=True):
-    if 'currency_formatter' in st.session_state:
-        return st.session_state['currency_formatter'](value, grouping=grouping)
-    else:
-        try:
-            # Tenta usar a função locale.currency padrão
-            return locale.currency(value, grouping=grouping, symbol='R$')# type: ignore
-        except (ValueError, TypeError):
-             return "R$ N/A" # Retorna N/A se a conversão falhar
-
-# --- Estilização CSS (Comentado por padrão) ---
-#url_background_app = "https://i.pinimg.com/originals/7c/0a/38/7c0a3899b0d94b18e49e445678c01a82.jpg"
-page_home = f"""
-        <style>
-            [data-testid="stAppViewContainer"] {{
-                background-color: withesmoke;
-                background-opacity: 6;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-size: cover;
-            }}
-            [data-testid="stToolbar"]{{
-                background-color: rgb(17, 63, 103)
-            }}
-            [data-testid="stSidebarContent"]{{
-                background-color: rgba(17, 63, 103, 0.2)
-            }}
-            [data-testid="stIconMaterial"]{{
-                color:white;
-            }}
-        </style>
-        """
-st.markdown(page_home, unsafe_allow_html=True)
+    # --- Estilização CSS (Comentado por padrão) ---
+    #url_background_app = "https://i.pinimg.com/originals/7c/0a/38/7c0a3899b0d94b18e49e445678c01a82.jpg"
+    page_home = f"""
+            <style>
+                [data-testid="stAppViewContainer"] {{
+                    background-color: withesmoke;
+                    background-opacity: 6;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: cover;
+                }}
+                [data-testid="stToolbar"]{{
+                    background-color: rgb(17, 63, 103)
+                }}
+                [data-testid="stSidebarContent"]{{
+                    background-color: rgba(17, 63, 103, 0.2)
+                }}
+                [data-testid="stIconMaterial"]{{
+                    color:white;
+                }}
+            </style>
+            """
+    st.markdown(page_home, unsafe_allow_html=True)
 
 # --- Configuração da API Gemini ---
 with st.container():
@@ -135,10 +139,8 @@ with st.container():
     # Adiciona hora ao fim do dia para incluir todas as vendas do último dia
     data_fim_query = datetime.combine(data_fim, datetime.max.time())
 
-# --- Consulta Principal ao Banco de Dados (Parametrizada) ---
+# --- Consulta Principal ao Banco de Dados (CSV) ---
 with st.container():
-
-
     # Carrega os dados usando a nova função centralizada
     df_vendas_filtrado = mdls.carregar_dados(      
         file_csv="dados_export.csv",  
@@ -154,7 +156,12 @@ with st.container():
     )
     #st.dataframe(df_vw_resumo_venda_itens)
 
-with st.container(): # --- Processamento Inicial de Dados --- #
+#data_para_ia =pd.merge(df_vendas_filtrado, df_vw_resumo_venda_itens, left_on="numero", right_on="dfnumero_nfce", how="right")
+#st.dataframe(data_para_ia.head(100))
+
+
+# --- Processamento Inicial de Dados --- #
+with st.container(): 
     progresso_tratamento_dados = st.progress(0, text="Iniciando Tratamento de Dados Solicitados")
     # Converte colunas numéricas após carregamento, tratando erros
     numeric_cols = ['preco_venda', 'preco_custo', 'quantidade', 'estoque', 'total_liquido_item']
@@ -218,72 +225,73 @@ with st.container(): # --- Processamento Inicial de Dados --- #
     df_estoque_valor = df_validos.drop_duplicates(subset=['nome_item'])
     valor_total_estoque_atual = (df_estoque_valor['estoque'] * df_estoque_valor['preco_custo']).sum()
     giro_estoque = vlr_total_custo / valor_total_estoque_atual if valor_total_estoque_atual > 0 else 0
-with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
+
+# Cards de KPI
+with st.expander("Quadro de KPI´s", expanded=True): 
     # --- Cards de Métricas ---
     col_kpi_01 = st.columns(6)
     with col_kpi_01[0]: # Lucro Liquido
-        ui.metric_card(title="Lucro Liquido",
-        content=format_currency(vlr_total_lucro),
-        description=f"Lucro liquido",
-        key="card_lucro_liquido_soma")
+        st.metric(label="Lucro Liquido",
+        value=format_currency(vlr_total_lucro),
+        delta=("Descontos: "+(format_currency(vlr_total_descontos_aplicados))))
     with col_kpi_01[1]: # Imposto Pago
-        ui.metric_card(title="Imposto Pago",
-        content=format_currency(total_tributos_pagos_soma),
-        description=f"Impostos Pagos",
-        key="card_tributo_pago_soma")
+        st.metric(label="Imposto Pago",
+        value=format_currency(total_tributos_pagos_soma),
+        delta=format_currency(total_tributos_pagos))
+        
     with col_kpi_01[2]: # Descontos Aplicados
-        ui.metric_card(title="Descontos Aplicados",
-        content=format_currency(vlr_total_descontos_aplicados),
-        description=f"Descontos Aplicados",
-        key="card_desconto_aplicado_nfce")
-    with col_kpi_01[3]: # Lucro por Atendimento
-        ui.metric_card(title="Lucro / Atendimento",
-        content=format_currency(lucro_por_atendimento),
-        description="Lucro médio por transação",
-        key="card_lucro_atendimento")
-    with col_kpi_01[4]: # Itens com Desconto
-        ui.metric_card(title="Itens com Desconto",
-        content=f"{taxa_itens_desconto:.2f}%",
-        description=f"{itens_com_desconto} de {total_itens_vendidos} itens",
-        key="card_taxa_itens_desconto")
-    with col_kpi_01[5]: # Giro de Estoque
-        ui.metric_card(title="Giro de Estoque",
-        content=f"{giro_estoque:.2f}",
-        description="CMV / Estoque (Período)",
-        key="card_giro_estoque")
+        st.metric(label="Descontos Aplicados",
+        value=format_currency(vlr_total_descontos_aplicados),
+        delta=("Vendas: "+format_currency(vlr_total_vendas)),
+        )
 
-    col_kpi_02 = st.columns(6) # Adicionado mais uma coluna para os novos KPIs
+    with col_kpi_01[3]: # Lucro por Atendimento
+        st.metric(label="Lucro por Atendimento",
+        value=format_currency(lucro_por_atendimento),
+        delta="Atendimentos: "+f"{total_atendimentos}")
+
+    with col_kpi_01[4]: # Itens com Desconto
+        st.metric(label="Itens com Desconto",
+        value=f"{taxa_itens_desconto:.2f}%",
+        delta=f"{itens_com_desconto} de {total_itens_vendidos} itens",
+        )
+
+    with col_kpi_01[5]: # Giro de Estoque
+        st.metric(label="Giro de Estoque",
+        value=format_currency(giro_estoque),
+        delta=f"{itens_por_transacao:.2f}")
+
+    col_kpi_02 = st.columns(6) 
     with col_kpi_02[0]: # Vendas Liquidas
-        ui.metric_card(title="Vendas Líquidas",
-        content=format_currency(vlr_total_vendas),
-        description=f" ",
-        key="card_vendas")
+        st.metric(label="Vendas Liquidas",
+        value=format_currency(vlr_total_vendas))
+
     with col_kpi_02[1]: # Custo Mercadoria
-        ui.metric_card(title="Custo Mercadoria (CMV)",
-        content=format_currency(vlr_total_custo),
-        description="Custo dos itens vendidos",
-        key="card_custo")
+        st.metric(label="Custo Mercadoria",
+        value=format_currency(vlr_total_custo))
+        
     with col_kpi_02[2]: # Itens Vendidos
-        ui.metric_card(title="Itens Vendidos",
-                    content=f"{total_itens_vendidos}",
-                    description=f"Itens Cancelados: {total_itens_cancelados} ",
-                    key="card_itens")
+        st.metric(label="Itens Vendidos",
+        value=f"{total_itens_vendidos}",
+        delta=f"{total_itens_cancelados} Cancelados")
+        
     with col_kpi_02[3]: # Ticket Medio
-            ui.metric_card(title="Ticket Médio",
-                        content=format_currency(vlr_ticket_medio),
-                        description=f"{total_atendimentos} Atendimentos",
-                        key="card_ticket_medio")
+        st.metric(label="Ticket Médio",
+        value=format_currency(vlr_ticket_medio),
+        delta=f"{total_atendimentos} Atendimentos")
+
     with col_kpi_02[4]: # Margem Bruta
-        ui.metric_card(title="Margem Bruta",
-        content=f"{perc_margem_bruta:.2f}%",
-        description="((Venda - Custo) / Venda)",
-        key="card_margem")
+        st.metric(label="Margem Bruta",
+        value=f"{perc_margem_bruta:.2f}%",
+        delta="Vendas: "+format_currency(vlr_total_vendas))
+
     with col_kpi_02[5]: # Itens/transação
-        ui.metric_card(title="Itens / Transação",
-        content=f"{itens_por_transacao:.2f}",
-        description="Média de itens por venda",
-        key="card_itens_transacao")
-with st.container(): # Graficos - Tabela top itens - Gemini
+        st.metric(label="Itens/Transação",
+        value=f"{itens_por_transacao:.2f}",
+        delta="Vendas: "+format_currency(vlr_total_vendas))
+
+# Graficos - Tabela top itens - Gemini
+with st.container(): 
         # --- Gráficos e Análises Gerais (se houver dados filtrados) ---
         tab_graficos, tab_top20, tab_ia = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "🤖 Análise Inteligente"])
         with tab_graficos:
@@ -357,10 +365,8 @@ with st.container(): # Graficos - Tabela top itens - Gemini
             if gemini_client:
                 st.info("Faça uma pergunta sobre os dados filtrados atualmente exibidos.", icon="❓")
                 pergunta_cliente_para_gemini = st.text_area("Sua pergunta:", key="ia_question_gemini", placeholder="Ex: Quais foram os 5 produtos menos vendidos neste período? Qual o dia com maior lucro?")
-                data_para_ia = df_vw_resumo_venda_itens.head(100)
-                data_para_ia['dfdata_abertura_cupom'] = pd.to_datetime(data_para_ia['dfdata_abertura_cupom'])
-                data_para_ia['dfdata_fechamento_cupom'] = pd.to_datetime(data_para_ia['dfdata_fechamento_cupom'])
-                data_para_ia['tempo_venda'] =  data_para_ia['dfdata_abertura_cupom'] - data_para_ia['dfdata_fechamento_cupom']
+                data_para_ia = df_vendas_filtrado.head(100)
+                st.dataframe(data_para_ia)
                 with st.popover("Ver dados Enviados a IA", use_container_width=True):
                     st.dataframe(data_para_ia, use_container_width=True, hide_index=True)
                 if st.button("Analisar com IA", key="ia_button_gemini"):
