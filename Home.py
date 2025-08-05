@@ -157,8 +157,6 @@ with st.container():
     #st.dataframe(df_vw_resumo_venda_itens)
 
 #data_para_ia =pd.merge(df_vendas_filtrado, df_vw_resumo_venda_itens, left_on="numero", right_on="dfnumero_nfce", how="right")
-#st.dataframe(data_para_ia.head(100))
-
 
 # --- Processamento Inicial de Dados --- #
 with st.container(): 
