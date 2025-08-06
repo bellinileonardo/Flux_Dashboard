@@ -122,6 +122,7 @@ streamlit-embedcode==0.1.2
 streamlit-extras==0.7.5
 streamlit-image-coordinates==0.3.1
 streamlit-keyup==0.3.0
+streamlit-shadcn-ui==0.1.18
 streamlit-toggle-switch==1.0.2
 streamlit-vertical-slider==2.5.5
 streamlit_faker==0.0.4
