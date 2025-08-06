@@ -207,10 +207,12 @@ def dados_enviados_ia(data_ia):
 # Menu TOP para paginas do app
 def menu_top_page():
     with st.container():
-        col_top_menu = st.columns(3)
+        col_top_menu = st.columns(4)
         with col_top_menu[0]:
             st.page_link("Home.py", label="Home", icon="🏠", use_container_width=True)
         with col_top_menu[1]:
-            st.page_link("http://#", label="Flux SoftHouse", icon="ℹ️", use_container_width=True)
+            st.page_link("pages/flux_ia.py", label="IA_FLUX", icon="🤖", use_container_width=True)
         with col_top_menu[2]:
+            st.page_link("http://www.google.com", label="Flux SoftHouse", icon="ℹ️", use_container_width=True)
+        with col_top_menu[3]:
             st.page_link("http://www.google.com", label="Google", icon="🌎", use_container_width=True)

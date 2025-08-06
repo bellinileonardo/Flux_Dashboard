@@ -3,13 +3,14 @@ from datetime import datetime
 import models as mdls
 import pandas as pd
 import locale
+import streamlit_shadcn_ui as ui
 import google.generativeai as genai # Para integração com Gemini
 import os # Para acessar a chave da API
 #from streamlit_extras.customize_running import center_running
 
 
 
-#center_running()
+
 # --- Configuração da Página ---
 with st.container():
     st.set_page_config(page_title="Flux Dash - IA",                   
@@ -17,7 +18,7 @@ with st.container():
                     layout="wide",                   
                     initial_sidebar_state="expanded"                   
                     )
-
+    mdls.menu_top_page()
     # --- Configuração de Localização (Locale) ---
     try:
         # Tenta configurar para Português do Brasil (Linux/macOS)
@@ -225,6 +226,7 @@ with st.container():
     giro_estoque = vlr_total_custo / valor_total_estoque_atual if valor_total_estoque_atual > 0 else 0
 
 # Cards de KPI
+'''
 with st.expander("Quadro de KPI´s", expanded=True): 
     # --- Cards de Métricas ---
     col_kpi_01 = st.columns(6)
@@ -287,11 +289,78 @@ with st.expander("Quadro de KPI´s", expanded=True):
         st.metric(label="Itens/Transação",
         value=f"{itens_por_transacao:.2f}",
         delta="Vendas: "+format_currency(vlr_total_vendas))
+'''
+with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
+    # --- Cards de Métricas ---
+    col_kpi_01 = st.columns(6)
+    with col_kpi_01[0]: # Lucro Liquido
+        ui.metric_card(title="Lucro Liquido",
+        content=format_currency(vlr_total_lucro),
+        description=f"Lucro liquido",
+        key="card_lucro_liquido_soma")
+    with col_kpi_01[1]: # Imposto Pago
+        ui.metric_card(title="Imposto Pago",
+        content=format_currency(total_tributos_pagos_soma),
+        description=f"Impostos Pagos",
+        key="card_tributo_pago_soma")
+    with col_kpi_01[2]: # Descontos Aplicados
+        ui.metric_card(title="Descontos Aplicados",
+        content=format_currency(vlr_total_descontos_aplicados),
+        description=f"Descontos Aplicados",
+        key="card_desconto_aplicado_nfce")
+    with col_kpi_01[3]: # Lucro por Atendimento
+        ui.metric_card(title="Lucro / Atendimento",
+        content=format_currency(lucro_por_atendimento),
+        description="Lucro médio por transação",
+        key="card_lucro_atendimento")
+    with col_kpi_01[4]: # Itens com Desconto
+        ui.metric_card(title="Itens com Desconto",
+        content=f"{taxa_itens_desconto:.2f}%",
+        description=f"{itens_com_desconto} de {total_itens_vendidos} itens",
+        key="card_taxa_itens_desconto")
+    with col_kpi_01[5]: # Giro de Estoque
+        ui.metric_card(title="Giro de Estoque",
+        content=f"{giro_estoque:.2f}",
+        description="CMV / Estoque (Período)",
+        key="card_giro_estoque")
+
+    col_kpi_02 = st.columns(6) # Adicionado mais uma coluna para os novos KPIs
+    with col_kpi_02[0]: # Vendas Liquidas
+        ui.metric_card(title="Vendas Líquidas",
+        content=format_currency(vlr_total_vendas),
+        description=f" ",
+        key="card_vendas")
+    with col_kpi_02[1]: # Custo Mercadoria
+        ui.metric_card(title="Custo Mercadoria (CMV)",
+        content=format_currency(vlr_total_custo),
+        description="Custo dos itens vendidos",
+        key="card_custo")
+    with col_kpi_02[2]: # Itens Vendidos
+        ui.metric_card(title="Itens Vendidos",
+                    content=f"{total_itens_vendidos}",
+                    description=f"Itens Cancelados: {total_itens_cancelados} ",
+                    key="card_itens")
+    with col_kpi_02[3]: # Ticket Medio
+            ui.metric_card(title="Ticket Médio",
+                        content=format_currency(vlr_ticket_medio),
+                        description=f"{total_atendimentos} Atendimentos",
+                        key="card_ticket_medio")
+    with col_kpi_02[4]: # Margem Bruta
+        ui.metric_card(title="Margem Bruta",
+        content=f"{perc_margem_bruta:.2f}%",
+        description="((Venda - Custo) / Venda)",
+        key="card_margem")
+    with col_kpi_02[5]: # Itens/transação
+        ui.metric_card(title="Itens / Transação",
+        content=f"{itens_por_transacao:.2f}",
+        description="Média de itens por venda",
+        key="card_itens_transacao")
+
 
 # Graficos - Tabela top itens - Gemini
 with st.container(): 
         # --- Gráficos e Análises Gerais (se houver dados filtrados) ---
-        tab_graficos, tab_top20, tab_ia = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "🤖 Análise Inteligente"])
+        tab_graficos, tab_top20 = st.tabs(["📈 Gráficos", "🎖️ TOP 20"])
         with tab_graficos:
             st.subheader("Visualizações Gráficas")
             col_graph1, col_graph2= st.columns(2, border=True, vertical_alignment="top")
@@ -357,154 +426,157 @@ with st.container():
                 df_top_faturamento['total_liquido_item'] = df_top_faturamento['total_liquido_item'].apply(format_currency)
                 df_top_faturamento = df_top_faturamento.rename(columns={'nome_item': 'Produto', 'total_liquido_item': 'Faturamento Total'})
                 st.dataframe(df_top_faturamento, use_container_width=True, hide_index=True)
-        with tab_ia:
-            st.subheader("Análise Inteligente com IA")
-            #st.dataframe(df_vendas_filtrado)
-            if gemini_client:
-                st.info("Faça uma pergunta sobre os dados filtrados atualmente exibidos.", icon="❓")
-                pergunta_cliente_para_gemini = st.text_area("Sua pergunta:", key="ia_question_gemini", placeholder="Ex: Quais foram os 5 produtos menos vendidos neste período? Qual o dia com maior lucro?")
-                data_para_ia = df_vendas_filtrado.head(100)
-                st.dataframe(data_para_ia)
-                with st.popover("Ver dados Enviados a IA", use_container_width=True):
-                    st.dataframe(data_para_ia, use_container_width=True, hide_index=True)
-                if st.button("Analisar com IA", key="ia_button_gemini"):
-                    if pergunta_cliente_para_gemini:
-                        with st.spinner("Consultando a IA... Por favor, aguarde."):
-                            try:
-                                dados_coletados_dfvendas = data_para_ia.to_json(index=False) # Envia as primeiras x linhas como CSV
-
-                                # Descrever as colunas para dar contexto à IA
-                                column_description = ", ".join(data_para_ia.columns)
-
-                                # Construir o prompt
-                                prompt = f"""
-                               Você é um Especialista em Inteligência de Varejo, agindo como um consultor de negócios. Seu objetivo principal é analisar dados de vendas para identificar padrões, anomalias e, mais importante, oportunidades claras para aumentar a lucratividade e a eficiência operacional. Sua comunicação deve ser direta, objetiva e focada em resultados financeiros.
-
-                                Contexto da Análise:
-                                Você receberá um conjunto de dados de vendas em formato JSON, extraído diretamente dos pontos de venda (PDVs) de uma ou mais lojas. A estrutura dos dados seguirá o schema abaixo. A sua tarefa é responder à pergunta específica do usuário sobre esses dados.
-
-                                Schema dos Dados (Colunas disponíveis nos dados: {column_description}):
-
-                                dfnumero_loja: Identificador da loja.
-
-                                dfdata_movimento: Data da transação.
-
-                                dfnumero_pdv: Identificador do caixa/ponto de venda.
-
-                                dfcodigo_operador, dfnome_operador: Identificação do operador de caixa.
-
-                                dfnumero_nfce: Número da nota fiscal.
-
-                                dfdata_abertura_cupom, dfdata_fechamento_cupom: Timestamps do início e fim da venda.
-
-                                dfcupom_cancelado, dfmotivo_cancelamento_cupom, dfsupervisor_cancelamento_cupom: Dados sobre cupons cancelados.
-
-                                dfcodigo_item, dfdescricao_item: Identificação do produto.
-
-                                dfitem_cancelado, dfmotivo_cancelamento_item: Dados sobre itens cancelados na venda.
-
-                                dfquantidade_vendida_item: Quantidade de unidades do item.
-
-                                dftotal_desconto_item: Valor total do desconto aplicado ao item.
-
-                                dfvalor_liquido_vendido_item: Valor final do item após descontos.
-
-                                Processo de Análise em Etapas:
-
-                                Análise Interna (Foco nos Dados Fornecidos):
-
-                                Primeiro, concentre-se exclusivamente nos dados do JSON para responder à pergunta do usuário.
-
-                                Identifique os principais KPIs relevantes para a pergunta, como:
-
-                                Produtos mais e menos vendidos (em volume e em valor).
-
-                                Desempenho por operador ou por PDV.
-
-                                Padrões de vendas por hora ou dia da semana.
-
-                                Impacto dos descontos na receita.
-
-                                Taxas e motivos de cancelamento (de cupons ou itens), identificando possíveis perdas ou necessidade de treinamento.
-
-                                Tempo médio de transação (dfdata_fechamento_cupom - dfdata_abertura_cupom).
-
-                                Enriquecimento com Dados Externos (Opcional e Sinalizado):
-
-                                Se e somente se a sua análise interna puder ser significativamente enriquecida, você pode, de forma proativa, buscar e correlacionar os achados com dados públicos e atuais sobre o varejo brasileiro.
-
-                                Sempre que usar dados externos, cite a fonte e o dado específico.
-
-                                Exemplos de enriquecimento:
-
-                                Sazonalidade: "O aumento nas vendas do 'Produto X' em Junho pode estar relacionado às festas juninas, uma tendência sazonal forte no varejo de alimentos."
-
-                                Indicadores Econômicos: "A queda no ticket médio pode refletir o atual índice de confiança do consumidor divulgado pelo IBGE."
-
-                                Taxas e Impostos: "O impacto da recente alteração na alíquota de ICMS para esta categoria de produto ainda não parece refletido nos preços."
-                                Segue amostra dos dados a serem analisados para a pergunta do usuario:
-                                ```json
-                                {dados_coletados_dfvendas}
-                                ```
-                                Pergunta do Usuário:
-                                {pergunta_cliente_para_gemini}
-
-                                A Formato da Resposta, caso entenda que este formato esteja em desacordo com a sua analise, pode modificar para ser
-                                o mais acertivo possivel em cima da pergunta do ususario:
-
-                                Segue padrão, que pode ser alterado caso seja necessario, de resposta:
-
-                                Estruture sua resposta de forma clara e acionável:
-
-                                Primeiro uma Resposta Direta: Comece com uma resposta concisa à pergunta do usuário.
-
-                                Depois as Principais Observações: Apresente os dados e padrões mais importantes que sustentam sua resposta, usando bullet points.
-
-
-                                Efetue a Análise e "Viés Lucrativo": Traduza os dados em insights de negócio. O que esses números significam em termos de dinheiro?
-
-                                Finalize com Oportunidades e Recomendações: Com base na análise, sugira 1 a 3 ações práticas que a gestão pode tomar para aumentar o lucro ou reduzir custos.
-
-                                
-                                Agora e com você GEMINI, faça Sua Análise e entregue o seu melhor:
-                                """
-
-                                # Chamada para a API do Gemini
-                                # O Gemini geralmente não usa 'roles' (system/user) da mesma forma que OpenAI.
-                                # O prompt é enviado diretamente.
-                                # Você pode adicionar configurações de segurança e geração.
-                                generation_config = genai.types.GenerationConfig( # type: ignore
-                                    # max_output_tokens=300, # Controle de tamanho da resposta
-                                    temperature=0.5 # Controle de criatividade
-                                )
-                                safety_settings = [ # Exemplo de configuração de segurança
-                                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                ]
-
-                                response = gemini_client.generate_content( # type: ignore
-                                    prompt, # O prompt construído anteriormente
-                                    generation_config=generation_config,
-                                    safety_settings=safety_settings
-                                )
-
-                                # Acessa o texto da resposta
-                                # Adiciona tratamento de erro caso a resposta seja bloqueada por segurança
+        '''
+            with tab_ia:
+                st.subheader("Análise Inteligente com IA")
+                #st.dataframe(df_vendas_filtrado)
+                if gemini_client:
+                    st.info("Faça uma pergunta sobre os dados filtrados atualmente exibidos.", icon="❓")
+                    pergunta_cliente_para_gemini = st.text_area("Sua pergunta:", key="ia_question_gemini", placeholder="Ex: Quais foram os 5 produtos menos vendidos neste período? Qual o dia com maior lucro?")
+                    data_para_ia = df_vendas_filtrado.head(100)
+                    st.dataframe(data_para_ia)
+                    with st.popover("Ver dados Enviados a IA", use_container_width=True):
+                        st.dataframe(data_para_ia, use_container_width=True, hide_index=True)
+                    if st.button("Analisar com IA", key="ia_button_gemini"):
+                        if pergunta_cliente_para_gemini:
+                            with st.spinner("Consultando a IA... Por favor, aguarde."):
                                 try:
-                                    answer = response.text
-                                    st.markdown("**Resposta da IA:**")
-                                    st.success(answer)
-                                except ValueError:
-                                    # Se a resposta foi bloqueada, 'response.text' pode dar erro.
-                                    st.error("A resposta foi bloqueada devido às configurações de segurança.", icon="🛡️")
-                                    # Opcional: Mostrar detalhes do bloqueio se disponíveis
-                                    if response.prompt_feedback:
-                                        st.json(response.prompt_feedback)
-                            except Exception as e: # Captura erros gerais da API do Google ou outros
-                                st.error(f"Ocorreu um erro inesperado ao processar a análise com Gemini: {e}", icon="🚨")
-                    else:
-                        st.warning("Por favor, digite uma pergunta para a IA.", icon="⚠️")
-            else:
-                st.warning("A funcionalidade de Análise Inteligente está desativada. Verifique a configuração da chave da API no menu lateral.", icon="🤖")
+                                    dados_coletados_dfvendas = data_para_ia.to_json(index=False) # Envia as primeiras x linhas como CSV
+
+                                    # Descrever as colunas para dar contexto à IA
+                                    column_description = ", ".join(data_para_ia.columns)
+
+                                    # Construir o prompt
+                                    prompt = f"""
+                                Você é um Especialista em Inteligência de Varejo, agindo como um consultor de negócios. Seu objetivo principal é analisar dados de vendas para identificar padrões, anomalias e, mais importante, oportunidades claras para aumentar a lucratividade e a eficiência operacional. Sua comunicação deve ser direta, objetiva e focada em resultados financeiros.
+
+                                    Contexto da Análise:
+                                    Você receberá um conjunto de dados de vendas em formato JSON, extraído diretamente dos pontos de venda (PDVs) de uma ou mais lojas. A estrutura dos dados seguirá o schema abaixo. A sua tarefa é responder à pergunta específica do usuário sobre esses dados.
+
+                                    Schema dos Dados (Colunas disponíveis nos dados: {column_description}):
+
+                                    dfnumero_loja: Identificador da loja.
+
+                                    dfdata_movimento: Data da transação.
+
+                                    dfnumero_pdv: Identificador do caixa/ponto de venda.
+
+                                    dfcodigo_operador, dfnome_operador: Identificação do operador de caixa.
+
+                                    dfnumero_nfce: Número da nota fiscal.
+
+                                    dfdata_abertura_cupom, dfdata_fechamento_cupom: Timestamps do início e fim da venda.
+
+                                    dfcupom_cancelado, dfmotivo_cancelamento_cupom, dfsupervisor_cancelamento_cupom: Dados sobre cupons cancelados.
+
+                                    dfcodigo_item, dfdescricao_item: Identificação do produto.
+
+                                    dfitem_cancelado, dfmotivo_cancelamento_item: Dados sobre itens cancelados na venda.
+
+                                    dfquantidade_vendida_item: Quantidade de unidades do item.
+
+                                    dftotal_desconto_item: Valor total do desconto aplicado ao item.
+
+                                    dfvalor_liquido_vendido_item: Valor final do item após descontos.
+
+                                    Processo de Análise em Etapas:
+
+                                    Análise Interna (Foco nos Dados Fornecidos):
+
+                                    Primeiro, concentre-se exclusivamente nos dados do JSON para responder à pergunta do usuário.
+
+                                    Identifique os principais KPIs relevantes para a pergunta, como:
+
+                                    Produtos mais e menos vendidos (em volume e em valor).
+
+                                    Desempenho por operador ou por PDV.
+
+                                    Padrões de vendas por hora ou dia da semana.
+
+                                    Impacto dos descontos na receita.
+
+                                    Taxas e motivos de cancelamento (de cupons ou itens), identificando possíveis perdas ou necessidade de treinamento.
+
+                                    Tempo médio de transação (dfdata_fechamento_cupom - dfdata_abertura_cupom).
+
+                                    Enriquecimento com Dados Externos (Opcional e Sinalizado):
+
+                                    Se e somente se a sua análise interna puder ser significativamente enriquecida, você pode, de forma proativa, buscar e correlacionar os achados com dados públicos e atuais sobre o varejo brasileiro.
+
+                                    Sempre que usar dados externos, cite a fonte e o dado específico.
+
+                                    Exemplos de enriquecimento:
+
+                                    Sazonalidade: "O aumento nas vendas do 'Produto X' em Junho pode estar relacionado às festas juninas, uma tendência sazonal forte no varejo de alimentos."
+
+                                    Indicadores Econômicos: "A queda no ticket médio pode refletir o atual índice de confiança do consumidor divulgado pelo IBGE."
+
+                                    Taxas e Impostos: "O impacto da recente alteração na alíquota de ICMS para esta categoria de produto ainda não parece refletido nos preços."
+                                    Segue amostra dos dados a serem analisados para a pergunta do usuario:
+                                    ```json
+                                    {dados_coletados_dfvendas}
+                                    ```
+                                    Pergunta do Usuário:
+                                    {pergunta_cliente_para_gemini}
+
+                                    A Formato da Resposta, caso entenda que este formato esteja em desacordo com a sua analise, pode modificar para ser
+                                    o mais acertivo possivel em cima da pergunta do ususario:
+
+                                    Segue padrão, que pode ser alterado caso seja necessario, de resposta:
+
+                                    Estruture sua resposta de forma clara e acionável:
+
+                                    Primeiro uma Resposta Direta: Comece com uma resposta concisa à pergunta do usuário.
+
+                                    Depois as Principais Observações: Apresente os dados e padrões mais importantes que sustentam sua resposta, usando bullet points.
+
+
+                                    Efetue a Análise e "Viés Lucrativo": Traduza os dados em insights de negócio. O que esses números significam em termos de dinheiro?
+
+                                    Finalize com Oportunidades e Recomendações: Com base na análise, sugira 1 a 3 ações práticas que a gestão pode tomar para aumentar o lucro ou reduzir custos.
+
+                                    
+                                    Agora e com você GEMINI, faça Sua Análise e entregue o seu melhor:
+                                    """
+
+                                    # Chamada para a API do Gemini
+                                    # O Gemini geralmente não usa 'roles' (system/user) da mesma forma que OpenAI.
+                                    # O prompt é enviado diretamente.
+                                    # Você pode adicionar configurações de segurança e geração.
+                                    generation_config = genai.types.GenerationConfig( # type: ignore
+                                        # max_output_tokens=300, # Controle de tamanho da resposta
+                                        temperature=0.5 # Controle de criatividade
+                                    )
+                                    safety_settings = [ # Exemplo de configuração de segurança
+                                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                                    ]
+
+                                    response = gemini_client.generate_content( # type: ignore
+                                        prompt, # O prompt construído anteriormente
+                                        generation_config=generation_config,
+                                        safety_settings=safety_settings
+                                    )
+
+                                    # Acessa o texto da resposta
+                                    # Adiciona tratamento de erro caso a resposta seja bloqueada por segurança
+                                    try:
+                                        answer = response.text
+                                        st.markdown("**Resposta da IA:**")
+                                        st.success(answer)
+                                    except ValueError:
+                                        # Se a resposta foi bloqueada, 'response.text' pode dar erro.
+                                        st.error("A resposta foi bloqueada devido às configurações de segurança.", icon="🛡️")
+                                        # Opcional: Mostrar detalhes do bloqueio se disponíveis
+                                        if response.prompt_feedback:
+                                            st.json(response.prompt_feedback)
+                                except Exception as e: # Captura erros gerais da API do Google ou outros
+                                    st.error(f"Ocorreu um erro inesperado ao processar a análise com Gemini: {e}", icon="🚨")
+                        else:
+                            st.warning("Por favor, digite uma pergunta para a IA.", icon="⚠️")
+                else:
+                    st.warning("A funcionalidade de Análise Inteligente está desativada. Verifique a configuração da chave da API no menu lateral.", icon="🤖")
+                
+        '''
