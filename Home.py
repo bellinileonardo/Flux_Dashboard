@@ -45,14 +45,15 @@ with st.container():
             amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             return f"R$ {amount}"
         except (ValueError, TypeError):
-            return "R$ N/A"
+            amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            return f"R$ {amount}"
 
     # --- Função auxiliar para formatar moeda ---
     def format_currency(value, grouping=True):
             try:
                 return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
             except (ValueError, TypeError):
-                return "R$ N/A"
+                return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
 
 
 
