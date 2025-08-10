@@ -7,6 +7,11 @@ import streamlit_shadcn_ui as ui
 import google.generativeai as genai # Para integração com Gemini
 import os # Para acessar a chave da API
 #from streamlit_extras.customize_running import center_running
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as px
+
+
 
 
 
@@ -139,7 +144,7 @@ with st.container():
 
     # Adiciona hora ao fim do dia para incluir todas as vendas do último dia
     data_fim_query = datetime.combine(data_fim, datetime.max.time())
-
+#st.write(st.session_state)
 # --- Consulta Principal ao Banco de Dados (CSV) ---
 with st.container():
     # Carrega os dados usando a nova função centralizada
@@ -156,8 +161,6 @@ with st.container():
         data_fim_query=data_fim_query
     )
     #st.dataframe(df_vw_resumo_venda_itens)
-
-#data_para_ia =pd.merge(df_vendas_filtrado, df_vw_resumo_venda_itens, left_on="numero", right_on="dfnumero_nfce", how="right")
 
 # --- Processamento Inicial de Dados --- #
 with st.container(): 
@@ -226,70 +229,7 @@ with st.container():
     giro_estoque = vlr_total_custo / valor_total_estoque_atual if valor_total_estoque_atual > 0 else 0
 
 # Cards de KPI
-'''
-with st.expander("Quadro de KPI´s", expanded=True): 
-    # --- Cards de Métricas ---
-    col_kpi_01 = st.columns(6)
-    with col_kpi_01[0]: # Lucro Liquido
-        st.metric(label="Lucro Liquido",
-        value=format_currency(vlr_total_lucro),
-        delta=("Descontos: "+(format_currency(vlr_total_descontos_aplicados))))
-    with col_kpi_01[1]: # Imposto Pago
-        st.metric(label="Imposto Pago",
-        value=format_currency(total_tributos_pagos_soma),
-        delta=format_currency(total_tributos_pagos))
-        
-    with col_kpi_01[2]: # Descontos Aplicados
-        st.metric(label="Descontos Aplicados",
-        value=format_currency(vlr_total_descontos_aplicados),
-        delta=("Vendas: "+format_currency(vlr_total_vendas)),
-        )
 
-    with col_kpi_01[3]: # Lucro por Atendimento
-        st.metric(label="Lucro por Atendimento",
-        value=format_currency(lucro_por_atendimento),
-        delta="Atendimentos: "+f"{total_atendimentos}")
-
-    with col_kpi_01[4]: # Itens com Desconto
-        st.metric(label="Itens com Desconto",
-        value=f"{taxa_itens_desconto:.2f}%",
-        delta=f"{itens_com_desconto} de {total_itens_vendidos} itens",
-        )
-
-    with col_kpi_01[5]: # Giro de Estoque
-        st.metric(label="Giro de Estoque",
-        value=format_currency(giro_estoque),
-        delta=f"{itens_por_transacao:.2f}")
-
-    col_kpi_02 = st.columns(6) 
-    with col_kpi_02[0]: # Vendas Liquidas
-        st.metric(label="Vendas Liquidas",
-        value=format_currency(vlr_total_vendas))
-
-    with col_kpi_02[1]: # Custo Mercadoria
-        st.metric(label="Custo Mercadoria",
-        value=format_currency(vlr_total_custo))
-        
-    with col_kpi_02[2]: # Itens Vendidos
-        st.metric(label="Itens Vendidos",
-        value=f"{total_itens_vendidos}",
-        delta=f"{total_itens_cancelados} Cancelados")
-        
-    with col_kpi_02[3]: # Ticket Medio
-        st.metric(label="Ticket Médio",
-        value=format_currency(vlr_ticket_medio),
-        delta=f"{total_atendimentos} Atendimentos")
-
-    with col_kpi_02[4]: # Margem Bruta
-        st.metric(label="Margem Bruta",
-        value=f"{perc_margem_bruta:.2f}%",
-        delta="Vendas: "+format_currency(vlr_total_vendas))
-
-    with col_kpi_02[5]: # Itens/transação
-        st.metric(label="Itens/Transação",
-        value=f"{itens_por_transacao:.2f}",
-        delta="Vendas: "+format_currency(vlr_total_vendas))
-'''
 with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
     # --- Cards de Métricas ---
     col_kpi_01 = st.columns(6)
@@ -365,51 +305,163 @@ with st.container():
             st.subheader("Visualizações Gráficas")
             col_graph1, col_graph2= st.columns(2, border=True, vertical_alignment="top")
             with col_graph1:
-                # Vendas Líquidas por Dia
-                st.markdown("**Vendas Líquidas por Dia**")
-                df_vendas_dia = df_validos.groupby(df_validos['dh_emissao'].dt.date)['total_liquido_item'].sum()
-                if not df_vendas_dia.empty:
-                    st.line_chart(df_vendas_dia, y="total_liquido_item", color="#FFBC4C", y_label="Total Liquido", use_container_width=True)
-                else:
-                    st.caption("Sem dados de vendas válidas para o gráfico diário.")
-
-                # Vendas por Setor
-                st.markdown("**Itens Vendidos por Setor**")
-                df_vendas_setor = df_validos['desc_setor'].value_counts()
-                #st.table(df_vendas_setor)
-                if not df_vendas_setor.empty:
-                    st.bar_chart(df_vendas_setor, x_label="Setor", y_label="Quantidade", color="#58A0C8", use_container_width=True)
-                else:
-                    st.caption("Sem dados de setor para exibir.")
-                # Vendas por Forma de Pagamento
-                st.markdown("**Itens Vendidos por Forma de Pagamento**")
-                df_vendas_forma_pagamento = df_validos['nome'].value_counts()
-                st.bar_chart(df_vendas_forma_pagamento, color="#FFBC4C", horizontal=True, use_container_width=True)
-
-                # Cancelamentos por Supervisor
-                st.markdown("**Cancelamentos por Supervisor**")
-                st.bar_chart(df_vw_resumo_venda_itens["dfsupervisor_cancelamento_cupom"].value_counts(), color="#58A0C8", horizontal=True, use_container_width=True)
-
+                with st.container(border=True):
+                    # Vendas Líquidas por Dia                
+                    df_vendas_dia = df_validos.groupby(df_validos['dh_emissao'].dt.date)[['total_liquido_item', 'custo_total_item', 'total_tributos', 'desconto']].sum()                      
+                    if not df_vendas_dia.empty:
+                        graph_venda_liquida = px.line(df_vendas_dia, 
+                                                    x=df_vendas_dia.index, 
+                                                    y=['desconto', 'custo_total_item', 'total_tributos','total_liquido_item' ], 
+                                                    title="Vendas Líquidas por Dia",
+                                                    color='variable',
+                                                    labels={'dh_emissao': 'Data',
+                                                            'value': 'Valor Total (R$)',
+                                                            'variable': 'Totais'},
+                                                            markers=True
+                                                    )
+                        graph_venda_liquida.for_each_trace(
+                                                    lambda trace: trace.update(name=trace.name
+                                                    .replace("total_liquido_item", "Total Vendas")
+                                                    .replace("desconto", "Descontos")
+                                                    .replace("custo_total_item", "CVM")
+                                                    .replace("total_tributos", "Tributos"))
+                                                    )
+                        st.plotly_chart(graph_venda_liquida)
+                    else:
+                        st.caption("Sem dados de vendas válidas para o gráfico diário.")
+                with st.container(border=True):
+                    # Vendas por Setor
+                    #st.markdown("**Itens Vendidos por Setor**")
+                    df_vendas_setor = df_validos['desc_setor'].value_counts()
+                    #st.table(df_vendas_setor)
+                    if not df_vendas_setor.empty:
+                        graph_venda_setor = px.bar(
+                            df_vendas_setor, 
+                            x=df_vendas_setor.index, 
+                            y=df_vendas_setor.values, 
+                            title="Itens Vendidos por Setor",
+                            barmode='stack',
+                            color_discrete_sequence=["#58A0C8"],
+                            labels={'y': 'Quantidade', 'desc_setor': 'Setor'}
+                            )
+                        st.plotly_chart(graph_venda_setor)
+                    else:
+                        st.caption("Sem dados de setor para exibir.")
+                    
+                graph1_colunas = st.columns(2)
+                with graph1_colunas[0]:
+                    with st.container(border=True):
+                        # Grafico de vendas por Forma de Pagamento   
+                        df_vendas_forma_pagamento = df_validos['nome'].value_counts()
+                        graph_venda_for_pagamento = px.bar(df_vendas_forma_pagamento, 
+                                                    x=df_vendas_forma_pagamento.values, 
+                                                    y=df_vendas_forma_pagamento.index,
+                                                    color_discrete_sequence=["#FFBC4C"],
+                                                    title="Itens Vendidos por Forma de Pagamento",
+                                                    orientation='h',
+                                                    labels={'x': 'Transações', 'nome': 'Tipos'}
+                                                    )
+                        st.plotly_chart(graph_venda_for_pagamento)
+                with graph1_colunas[1]:
+                    with st.container(border=True):
+                        # Grafico de cancelamentos por Supevisor
+                        df_cancel_totais_supervisor = df_vw_resumo_venda_itens["dfsupervisor_cancelamento_cupom"].value_counts()
+                        graph_cancel_supervisor = px.bar(df_cancel_totais_supervisor, 
+                                                    y=df_cancel_totais_supervisor.values, 
+                                                    x=df_cancel_totais_supervisor.index, 
+                                                    title="Cancelamentos por Supervisor",
+                                                    orientation='v',
+                                                    color_discrete_sequence=["#58A0C8"],
+                                                    labels={'y': 'Cancelamentos', 'dfsupervisor_cancelamento_cupom': 'Fiscal'}
+                                                    )
+                        st.plotly_chart(graph_cancel_supervisor)
+                    
             with col_graph2:
-                # Vendas por Categoria
-                st.markdown("**Itens Vendidos por Categoria**")
-                df_vendas_categoria = df_validos['desc_categoria'].value_counts().head(15) # Top 15
-                if not df_vendas_categoria.empty:
-                    st.bar_chart(df_vendas_categoria, color="#58A0C8", use_container_width=True)
-                else:
-                    st.caption("Sem dados de categoria para exibir.")
-                # Vendas por PDV (Série) - Só mostra se 'Todas' as séries estiverem selecionadas
-                st.markdown("**Itens Vendidos por Série (PDV)**")
-                df_vendas_pdv = df_vendas_filtrado['serie'].value_counts()
-                st.bar_chart(df_vendas_pdv, color="#FFBC4C", x_label="PDV", use_container_width=True)
-                # Total de Cancelamentos
-                st.markdown("**Cancelamentos por Motivo**")
-                st.bar_chart(df_vw_resumo_venda_itens["dfmotivo_cancelamento_cupom"].value_counts(), color="#58A0C8", horizontal=True, use_container_width=True)
-                # Vendas por Colaborador
-                st.markdown("**Vendas por Colaborador**")
-                st.bar_chart(df_vw_resumo_venda_itens['dfnome_operador'].value_counts(), color="#FFBC4C", horizontal=True, use_container_width=True)
+                with st.container(border=True):
+                    # Vendas por Categoria                
+                    df_vendas_categoria = df_validos['desc_categoria'].value_counts().head(20) # Top 20
+                    if not df_vendas_categoria.empty:
+                        graph_venda_categoria = px.bar(
+                            df_vendas_categoria, 
+                            y=df_vendas_categoria.values, 
+                            x=df_vendas_categoria.index, 
+                            title="Itens Vendidos por Categoria",
+                            orientation='v',
+                            color_discrete_sequence=["#58A0C8"],                       
+                            labels={'y': 'Vendas', 'desc_categoria': 'Categoria'}
+                            )
+                        st.plotly_chart(graph_venda_categoria)
+                        #st.bar_chart(df_vendas_categoria, color="#58A0C8", use_container_width=True)
+                    else:
+                        st.caption("Sem dados de categoria para exibir.")
+
+                graph2_colunas = st.columns(2)
+                with graph2_colunas[1]:
+                    with st.container(border=True):
+                        # Vendas por PDV (Série) - Só mostra se 'Todas' as séries estiverem selecionadas
+                        df_vendas_pdv = df_vendas_filtrado['serie'].value_counts()
+                        graph_vendas_pdv = px.pie(df_vendas_pdv, 
+                                                values=df_vendas_pdv.values, 
+                                                names=df_vendas_pdv.index, 
+                                                title="Vendas por PDV",
+                                                color_discrete_sequence=["#58A0C8"],
+                                                hole=0.3,
+                                                labels={'value': 'Vendas (R$)', 'serie': 'PDV'}
+                                                )
+                        st.plotly_chart(graph_vendas_pdv)
+                with graph2_colunas[0]:  
+                    with st.container(border=True):
+                         # Total de Cancelamentos
+                        df_total_motivos_cancelamentos = df_vw_resumo_venda_itens["dfmotivo_cancelamento_cupom"].value_counts()
+                        graph_mot_cancelamentos_total = px.bar(
+                            df_total_motivos_cancelamentos, 
+                            x=df_total_motivos_cancelamentos.values, 
+                            y=df_total_motivos_cancelamentos.index, 
+                            title="Cancelamentos por Motivo",
+                            orientation='h',
+                            color_discrete_sequence=["#FFBC4C"],
+                            labels={'x': 'Total Cancelamentos', 'dfmotivo_cancelamento_cupom': 'Motivos'}
+                            )
+                        st.plotly_chart(graph_mot_cancelamentos_total)
+                with st.container(border=True):
+                    
+                    # Vendas por Colaborador
+                    df_vendas_colaboradores = df_vw_resumo_venda_itens['dfnome_operador'].value_counts()
+                    graph_vendas_colaborador = px.bar(
+                        df_vendas_colaboradores, 
+                        x=df_vendas_colaboradores.values, 
+                        y=df_vendas_colaboradores.index, 
+                        title="Vendas por Colaborador",
+                        orientation='h',
+                        color_discrete_sequence=["#58A0C8"],
+                        labels={'x': 'Vendas (R$)', 'dfnome_operador': 'Colaborador'}
+                        )
+                    st.plotly_chart(graph_vendas_colaborador)
+        
         with tab_top20:
+            # Agrupa os dados por produto para obter os totais de vendas e quantidade.
+            # Isso é necessário para que o ranking de produtos funcione corretamente,
+            # ao invés de apenas pegar as primeiras 20 linhas de vendas.
+            df_produtos_agregados = df_validos.groupby('nome_item').agg(
+                quantidade=('quantidade', 'sum'),
+                total_liquido_item=('total_liquido_item', 'sum'),
+                desconto_liquido_item=('desconto', 'sum'),
+                setor_item=('desc_setor', 'first'),
+                categoria_item=('desc_categoria', 'first'),
+                estoque_item=('estoque', 'first')
+            ).reset_index()
+            col_top_20_tab = st.columns(3)
+            with col_top_20_tab[0]:
+                pass
+            with col_top_20_tab[1]:
+                pass
+            with col_top_20_tab[2]:
+                pass
+            df_top_15 = mdls.exibir_ranking_top_produtos(df_produtos_agregados, 15)
+            
+            '''
             col_tabela1, col_tabela2 = st.columns(2)
+            
             with col_tabela1:
                 # Top Itens Mais Vendidos (em quantidade)
                 st.markdown("**Top 20 Itens Mais Vendidos (Quantidade)**")
@@ -426,157 +478,4 @@ with st.container():
                 df_top_faturamento['total_liquido_item'] = df_top_faturamento['total_liquido_item'].apply(format_currency)
                 df_top_faturamento = df_top_faturamento.rename(columns={'nome_item': 'Produto', 'total_liquido_item': 'Faturamento Total'})
                 st.dataframe(df_top_faturamento, use_container_width=True, hide_index=True)
-        '''
-            with tab_ia:
-                st.subheader("Análise Inteligente com IA")
-                #st.dataframe(df_vendas_filtrado)
-                if gemini_client:
-                    st.info("Faça uma pergunta sobre os dados filtrados atualmente exibidos.", icon="❓")
-                    pergunta_cliente_para_gemini = st.text_area("Sua pergunta:", key="ia_question_gemini", placeholder="Ex: Quais foram os 5 produtos menos vendidos neste período? Qual o dia com maior lucro?")
-                    data_para_ia = df_vendas_filtrado.head(100)
-                    st.dataframe(data_para_ia)
-                    with st.popover("Ver dados Enviados a IA", use_container_width=True):
-                        st.dataframe(data_para_ia, use_container_width=True, hide_index=True)
-                    if st.button("Analisar com IA", key="ia_button_gemini"):
-                        if pergunta_cliente_para_gemini:
-                            with st.spinner("Consultando a IA... Por favor, aguarde."):
-                                try:
-                                    dados_coletados_dfvendas = data_para_ia.to_json(index=False) # Envia as primeiras x linhas como CSV
-
-                                    # Descrever as colunas para dar contexto à IA
-                                    column_description = ", ".join(data_para_ia.columns)
-
-                                    # Construir o prompt
-                                    prompt = f"""
-                                Você é um Especialista em Inteligência de Varejo, agindo como um consultor de negócios. Seu objetivo principal é analisar dados de vendas para identificar padrões, anomalias e, mais importante, oportunidades claras para aumentar a lucratividade e a eficiência operacional. Sua comunicação deve ser direta, objetiva e focada em resultados financeiros.
-
-                                    Contexto da Análise:
-                                    Você receberá um conjunto de dados de vendas em formato JSON, extraído diretamente dos pontos de venda (PDVs) de uma ou mais lojas. A estrutura dos dados seguirá o schema abaixo. A sua tarefa é responder à pergunta específica do usuário sobre esses dados.
-
-                                    Schema dos Dados (Colunas disponíveis nos dados: {column_description}):
-
-                                    dfnumero_loja: Identificador da loja.
-
-                                    dfdata_movimento: Data da transação.
-
-                                    dfnumero_pdv: Identificador do caixa/ponto de venda.
-
-                                    dfcodigo_operador, dfnome_operador: Identificação do operador de caixa.
-
-                                    dfnumero_nfce: Número da nota fiscal.
-
-                                    dfdata_abertura_cupom, dfdata_fechamento_cupom: Timestamps do início e fim da venda.
-
-                                    dfcupom_cancelado, dfmotivo_cancelamento_cupom, dfsupervisor_cancelamento_cupom: Dados sobre cupons cancelados.
-
-                                    dfcodigo_item, dfdescricao_item: Identificação do produto.
-
-                                    dfitem_cancelado, dfmotivo_cancelamento_item: Dados sobre itens cancelados na venda.
-
-                                    dfquantidade_vendida_item: Quantidade de unidades do item.
-
-                                    dftotal_desconto_item: Valor total do desconto aplicado ao item.
-
-                                    dfvalor_liquido_vendido_item: Valor final do item após descontos.
-
-                                    Processo de Análise em Etapas:
-
-                                    Análise Interna (Foco nos Dados Fornecidos):
-
-                                    Primeiro, concentre-se exclusivamente nos dados do JSON para responder à pergunta do usuário.
-
-                                    Identifique os principais KPIs relevantes para a pergunta, como:
-
-                                    Produtos mais e menos vendidos (em volume e em valor).
-
-                                    Desempenho por operador ou por PDV.
-
-                                    Padrões de vendas por hora ou dia da semana.
-
-                                    Impacto dos descontos na receita.
-
-                                    Taxas e motivos de cancelamento (de cupons ou itens), identificando possíveis perdas ou necessidade de treinamento.
-
-                                    Tempo médio de transação (dfdata_fechamento_cupom - dfdata_abertura_cupom).
-
-                                    Enriquecimento com Dados Externos (Opcional e Sinalizado):
-
-                                    Se e somente se a sua análise interna puder ser significativamente enriquecida, você pode, de forma proativa, buscar e correlacionar os achados com dados públicos e atuais sobre o varejo brasileiro.
-
-                                    Sempre que usar dados externos, cite a fonte e o dado específico.
-
-                                    Exemplos de enriquecimento:
-
-                                    Sazonalidade: "O aumento nas vendas do 'Produto X' em Junho pode estar relacionado às festas juninas, uma tendência sazonal forte no varejo de alimentos."
-
-                                    Indicadores Econômicos: "A queda no ticket médio pode refletir o atual índice de confiança do consumidor divulgado pelo IBGE."
-
-                                    Taxas e Impostos: "O impacto da recente alteração na alíquota de ICMS para esta categoria de produto ainda não parece refletido nos preços."
-                                    Segue amostra dos dados a serem analisados para a pergunta do usuario:
-                                    ```json
-                                    {dados_coletados_dfvendas}
-                                    ```
-                                    Pergunta do Usuário:
-                                    {pergunta_cliente_para_gemini}
-
-                                    A Formato da Resposta, caso entenda que este formato esteja em desacordo com a sua analise, pode modificar para ser
-                                    o mais acertivo possivel em cima da pergunta do ususario:
-
-                                    Segue padrão, que pode ser alterado caso seja necessario, de resposta:
-
-                                    Estruture sua resposta de forma clara e acionável:
-
-                                    Primeiro uma Resposta Direta: Comece com uma resposta concisa à pergunta do usuário.
-
-                                    Depois as Principais Observações: Apresente os dados e padrões mais importantes que sustentam sua resposta, usando bullet points.
-
-
-                                    Efetue a Análise e "Viés Lucrativo": Traduza os dados em insights de negócio. O que esses números significam em termos de dinheiro?
-
-                                    Finalize com Oportunidades e Recomendações: Com base na análise, sugira 1 a 3 ações práticas que a gestão pode tomar para aumentar o lucro ou reduzir custos.
-
-                                    
-                                    Agora e com você GEMINI, faça Sua Análise e entregue o seu melhor:
-                                    """
-
-                                    # Chamada para a API do Gemini
-                                    # O Gemini geralmente não usa 'roles' (system/user) da mesma forma que OpenAI.
-                                    # O prompt é enviado diretamente.
-                                    # Você pode adicionar configurações de segurança e geração.
-                                    generation_config = genai.types.GenerationConfig( # type: ignore
-                                        # max_output_tokens=300, # Controle de tamanho da resposta
-                                        temperature=0.5 # Controle de criatividade
-                                    )
-                                    safety_settings = [ # Exemplo de configuração de segurança
-                                        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                                    ]
-
-                                    response = gemini_client.generate_content( # type: ignore
-                                        prompt, # O prompt construído anteriormente
-                                        generation_config=generation_config,
-                                        safety_settings=safety_settings
-                                    )
-
-                                    # Acessa o texto da resposta
-                                    # Adiciona tratamento de erro caso a resposta seja bloqueada por segurança
-                                    try:
-                                        answer = response.text
-                                        st.markdown("**Resposta da IA:**")
-                                        st.success(answer)
-                                    except ValueError:
-                                        # Se a resposta foi bloqueada, 'response.text' pode dar erro.
-                                        st.error("A resposta foi bloqueada devido às configurações de segurança.", icon="🛡️")
-                                        # Opcional: Mostrar detalhes do bloqueio se disponíveis
-                                        if response.prompt_feedback:
-                                            st.json(response.prompt_feedback)
-                                except Exception as e: # Captura erros gerais da API do Google ou outros
-                                    st.error(f"Ocorreu um erro inesperado ao processar a análise com Gemini: {e}", icon="🚨")
-                        else:
-                            st.warning("Por favor, digite uma pergunta para a IA.", icon="⚠️")
-                else:
-                    st.warning("A funcionalidade de Análise Inteligente está desativada. Verifique a configuração da chave da API no menu lateral.", icon="🤖")
-                
-        '''
+            '''

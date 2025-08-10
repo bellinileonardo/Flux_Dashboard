@@ -101,7 +101,7 @@ magicEnabled = false
 # assignment statements.
 
 # Default: true
-# fastReruns = true
+fastReruns = true
 
 # Raise an exception after adding unserializable data to Session State.
 # Some execution environments may require serializing all data in Session
@@ -109,7 +109,7 @@ magicEnabled = false
 # or when the execution environment will stop supporting it in the future.
 
 # Default: false
-# enforceSerializableSessionState = false
+enforceSerializableSessionState = true
 
 # Adjust how certain 'options' widgets like radio, selectbox, and
 # multiselect coerce Enum members when the Enum class gets re-defined

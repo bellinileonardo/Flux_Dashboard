@@ -76,26 +76,26 @@ def exibir_aba_top20(data):
     st.subheader(f"📊 Ranking Top {top_n} por Receita de Vendas")
     if not df_top_n.empty:
         # Ordena o DataFrame pela receita (total_liquido_item) para uma visualização mais intuitiva
-        df_sorted = df_top_n.sort_values('total_liquido_item', ascending=True)
+        df_sorted = df_top_n.sort_values('quantidade', ascending=True).head(top_n)
+        st.dataframe(df_sorted)
+        
 
         fig = px.bar(
             df_sorted,
             x='total_liquido_item',
             y='nome_item',
-            orientation='h',
+            orientation='v',
             # Exibe o valor da receita na barra, formatado como moeda
             text='total_liquido_item',
             # A cor continua representando a quantidade, adicionando uma dimensão extra de informação
             color='quantidade',
-            color_continuous_scale=px.colors.sequential.Tealgrn,
-            # Rótulos claros para os eixos e legenda de cor
             labels={
                 'nome_item': 'Produto',
                 'quantidade': 'Unidades Vendidas',
                 'total_liquido_item': 'Receita'
-            },
+            }
             # A altura dinâmica é uma ótima prática e foi mantida
-            height=max(400, top_n * 35)
+            #eight=max(400, top_n * 35)
         )
 
         # Atualiza a formatação do texto e a aparência geral do gráfico
@@ -112,19 +112,7 @@ def exibir_aba_top20(data):
             customdata=df_sorted[['quantidade']] # Adiciona 'quantidade' aos dados do hover
         )
 
-        fig.update_layout(
-            # Adiciona um título centralizado ao gráfico
-            title=f'Top {top_n} Produtos por Receita',
-            title_x=0.5,
-            # Remove margens desnecessárias
-            margin=dict(l=0, r=20, t=50, b=20),
-            # Remove o título do eixo Y, pois os nomes dos produtos já são autoexplicativos
-            yaxis_title=None,
-            # Define o título correto para o eixo X
-            xaxis_title="Receita (R$)",
-            # Expande ligeiramente o eixo X para garantir que o texto não seja cortado
-            xaxis_range=[0, df_sorted['total_liquido_item'].max() * 1.15]
-        )
+        
         st.plotly_chart(fig, use_container_width=True)
 
     else:
@@ -145,6 +133,72 @@ def exibir_aba_top20(data):
             )
         else:
             st.warning("Tabela vazia devido aos filtros aplicados.")
+
+import streamlit as st
+import plotly.express as px
+import pandas as pd
+
+def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
+    st.subheader(f"📊 Ranking Top {top_n} Produtos por Receita de Vendas")
+
+    if df_top_n.empty:
+        st.info("O gráfico não pode ser exibido pois não há dados disponíveis para os filtros aplicados.")
+        return
+
+    # Ordena pelos produtos com maior receita (do maior para o menor)
+    df_sorted = df_top_n.sort_values('total_liquido_item', ascending=False).head(top_n)
+    df_sorted = df_sorted.rename(columns={
+        'nome_item': 'Produto',
+        'quantidade': 'Unidades Vendidas',
+        'estoque_item': 'Estoque',
+        'total_liquido_item': 'Receita Total',
+        'setor_item': 'Setor',
+        'categoria_item': 'Categoria',
+        'desconto_liquido_item': 'Descontos'
+
+    })
+        
+    ranking_top_coluna = st.columns(3)
+    with ranking_top_coluna[0]:
+        # --- 1. Identificação de Produtos com Baixa Quantidade (possível ruptura) ---
+        with st.container(border=True):  
+            st.subheader("Rank de Produtos por Setor") 
+            st.plotly_chart(px.bar(df_sorted['Setor'].value_counts(),
+                                   labels={
+                                       'index': 'Setor',
+                                       'value': 'Quantidade de Produtos'
+                                   },
+                                   color=df_sorted['Setor'].value_counts().index,
+                                   #title="Rank de Produtos por Setor"
+                                   )   
+                            )
+                
+    with ranking_top_coluna[1]:        
+    # --- 3. Tabela Detalhada com Estilo ---
+        with st.container(border=True):            
+            styled_df = df_sorted.style \
+                .background_gradient(cmap='Greens', subset=['Unidades Vendidas']) \
+                .background_gradient(cmap='Reds', subset=['Descontos']) \
+                .background_gradient(cmap='Blues', subset=['Receita Total']) \
+                .format({'Unidades Vendidas': '{:,.0f}', 'Receita Total': 'R$ {:,.2f}','Descontos': 'R$ {:,.2f}'})
+            st.subheader("Produtos por Receita de Vendas")
+            st.dataframe(styled_df, use_container_width=True, hide_index=True)
+
+    with ranking_top_coluna[2]:
+        with st.container(border=True):    
+            st.subheader("Produtos com Risco de Ruptura")
+            limiar_ruptura = st.slider("Limiar de Ruptura (Quantidade)",min_value=1, max_value=1000, value=100, step=10)
+            produtos_em_risco = df_sorted[df_sorted['Estoque'] <= limiar_ruptura]
+            if not produtos_em_risco.empty:                
+                st.warning(f"{len(produtos_em_risco)} produto(s) com estoque abaixo do limiar de ruptura (≤ {limiar_ruptura} unidades).")
+                
+                st.dataframe(produtos_em_risco[['Produto', 'Estoque', 'Unidades Vendidas']].sort_values('Unidades Vendidas'),
+                            use_container_width=True)
+            else:
+                st.success("Não há produtos com risco de ruptura imadiato")
+            
+
+
 
 # Primeira função de carregamento de dados, mais pesada(Estudo)
 @st.cache_data(ttl=6000, show_spinner="Fabricando dados solicitados... Aguarde...")
