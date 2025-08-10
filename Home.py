@@ -25,23 +25,13 @@ with st.container():
                     )
     mdls.menu_top_page()
     
-    # --- Configuração de Localização (Locale) --- 
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-
-    # --- Fallback manual para moeda ---
-    def format_currency_fallback(value, grouping=False):
+    # --- Função auxiliar para formatar moeda ---
+    def format_currency(value, grouping=True):        
         try:
             amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             return f"R$ {amount}"
         except (ValueError, TypeError):
             return "R$ N/A"
-
-    # --- Função auxiliar para formatar moeda ---
-    def format_currency(value, grouping=True):        
-            try:
-                return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
-            except (ValueError, TypeError):
-                return "R$ N/A"
 
 
 
