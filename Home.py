@@ -24,20 +24,9 @@ with st.container():
                     initial_sidebar_state="expanded"                   
                     )
     mdls.menu_top_page()
-
-    # --- Configuração de Localização (Locale) ---
-    try:
-        # Tenta configurar para Português do Brasil (Linux/macOS)
-        locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-        st.session_state['use_currency_fallback'] = False
-    except locale.Error:
-        try:
-            # Fallback para Windows
-            locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
-            st.session_state['use_currency_fallback'] = False
-        except locale.Error:
-            st.warning("Não foi possível definir o locale para pt_BR. Usando formatação padrão para moeda.")
-            st.session_state['use_currency_fallback'] = True
+    
+    # --- Configuração de Localização (Locale) --- 
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
     # --- Fallback manual para moeda ---
     def format_currency_fallback(value, grouping=False):
@@ -45,15 +34,14 @@ with st.container():
             amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             return f"R$ {amount}"
         except (ValueError, TypeError):
-            amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            return f"R$ {amount}"
+            return "R$ N/A"
 
     # --- Função auxiliar para formatar moeda ---
-    def format_currency(value, grouping=True):
+    def format_currency(value, grouping=True):        
             try:
                 return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
             except (ValueError, TypeError):
-                return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
+                return "R$ N/A"
 
 
 
