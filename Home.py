@@ -87,7 +87,7 @@ with st.container():
     gemini_api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
     if gemini_api_key is None:
         st.sidebar.subheader("Chave API GEMINI")
-        gemini_api_key = st.sidebar.text_input("Digite Sua Chave e pressione ENTER", key="chave_api_gemini")
+        gemini_api_key = st.sidebar.text_input("Digite Sua Chave e pressione ENTER", key="chave_api_gemini_home")
     gemini_client = None
     if gemini_api_key:
         try:
