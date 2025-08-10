@@ -49,9 +49,6 @@ with st.container():
 
     # --- Função auxiliar para formatar moeda ---
     def format_currency(value, grouping=True):
-        if st.session_state.get('use_currency_fallback', False):
-            return format_currency_fallback(value, grouping=grouping)
-        else:
             try:
                 return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
             except (ValueError, TypeError):
