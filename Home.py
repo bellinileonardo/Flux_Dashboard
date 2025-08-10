@@ -24,39 +24,40 @@ with st.container():
                     initial_sidebar_state="expanded"                   
                     )
     mdls.menu_top_page()
+
     # --- Configuração de Localização (Locale) ---
     try:
         # Tenta configurar para Português do Brasil (Linux/macOS)
         locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+        st.session_state['use_currency_fallback'] = False
     except locale.Error:
         try:
             # Fallback para Windows
             locale.setlocale(locale.LC_ALL, 'Portuguese_Brazil.1252')
+            st.session_state['use_currency_fallback'] = False
         except locale.Error:
-            st.warning("Não foi possível definir o local para pt_BR. Usando formatação padrão para moeda.")
-            # Define um formatador manual simples como fallback se tudo falhar
-            def format_currency_fallback(value, grouping=False):
-                # Simples fallback, pode não ser perfeito para todos os casos
-                try:
-                    amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                    return f"R$ {amount}"
-                except (ValueError, TypeError):
-                    return "R$ N/A" # Retorna N/A se a conversão falhar
-            # Sobrescreve a função de moeda apenas se a configuração falhar
-            # Usar locale.format_string é geralmente mais robusto se o locale foi definido parcialmente
-            # Mas vamos usar o fallback simples para garantir que algo funcione.
-            st.session_state['currency_formatter'] = format_currency_fallback
+            st.warning("Não foi possível definir o locale para pt_BR. Usando formatação padrão para moeda.")
+            st.session_state['use_currency_fallback'] = True
 
-    # Função auxiliar para formatar moeda, usando o fallback se necessário
+    # --- Fallback manual para moeda ---
+    def format_currency_fallback(value, grouping=False):
+        try:
+            amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            return f"R$ {amount}"
+        except (ValueError, TypeError):
+            return "R$ N/A"
+
+    # --- Função auxiliar para formatar moeda ---
     def format_currency(value, grouping=True):
-        if 'currency_formatter' in st.session_state:
-            return st.session_state['currency_formatter'](value, grouping=grouping)
+        if st.session_state.get('use_currency_fallback', False):
+            return format_currency_fallback(value, grouping=grouping)
         else:
             try:
-                # Tenta usar a função locale.currency padrão
-                return locale.currency(value, grouping=grouping, symbol='R$')# type: ignore
+                return locale.currency(value, grouping=grouping, symbol='R$')  # type: ignore
             except (ValueError, TypeError):
-                return "R$ N/A" # Retorna N/A se a conversão falhar
+                return "R$ N/A"
+
+
 
     # --- Estilização CSS (Comentado por padrão) ---
     #url_background_app = "https://i.pinimg.com/originals/7c/0a/38/7c0a3899b0d94b18e49e445678c01a82.jpg"
