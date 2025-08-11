@@ -2,41 +2,33 @@ import streamlit as st
 from datetime import datetime
 import models as mdls
 import pandas as pd
-import locale
 import streamlit_shadcn_ui as ui
 import google.generativeai as genai # Para integração com Gemini
 import os # Para acessar a chave da API
 #from streamlit_extras.customize_running import center_running
-import seaborn as sns
-import matplotlib.pyplot as plt
 import plotly.express as px
-
-
-
-
 
 
 # --- Configuração da Página ---
 with st.container():
-    st.set_page_config(page_title="Flux Dash - IA",                   
-                    page_icon=":robot:",                   
-                    layout="wide",                   
-                    initial_sidebar_state="expanded"                   
+    st.set_page_config(page_title="Flux Dash - IA",
+                    page_icon=":robot:",
+                    layout="wide",
+                    initial_sidebar_state="expanded"
                     )
+
+    # Chama Menu TOPO
     mdls.menu_top_page()
-    
-    # --- Função auxiliar para formatar moeda ---
-    def format_currency(value, grouping=True):        
+
+    # --- Formatar Moeda(R$) ---
+    def format_currency(value, grouping=True):
         try:
             amount = f"{value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
             return f"R$ {amount}"
         except (ValueError, TypeError):
             return "R$ N/A"
 
-
-
-    # --- Estilização CSS (Comentado por padrão) ---
-    #url_background_app = "https://i.pinimg.com/originals/7c/0a/38/7c0a3899b0d94b18e49e445678c01a82.jpg"
+    # --- Estilização CSS ---
     page_home = f"""
             <style>
                 [data-testid="stAppViewContainer"] {{
@@ -59,32 +51,13 @@ with st.container():
             """
     st.markdown(page_home, unsafe_allow_html=True)
 
-# --- Configuração da API Gemini ---
-with st.container():
-    gemini_api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY"))
-    if gemini_api_key is None:
-        st.sidebar.subheader("Chave API GEMINI")
-        gemini_api_key = st.sidebar.text_input("Digite Sua Chave e pressione ENTER", key="chave_api_gemini_home")
-    gemini_client = None
-    if gemini_api_key:
-        try:
-            genai.configure(api_key=gemini_api_key) # type: ignore
-            # Escolha o modelo Gemini apropriado (ex: gemini-1.5-flash, gemini-pro)
-            gemini_client = genai.GenerativeModel('gemini-1.5-flash') # type: ignore # Ou outro modelo
-            # Teste simples (opcional) - pode gerar custo mínimo
-            # gemini_client.generate_content("Teste")
-        except Exception as e:
-            st.warning(f"Não foi possível inicializar a API do Gemini. A funcionalidade de IA estará desativada. Erro: {e}", icon="🤖")
-            gemini_client = None
-    else:
-        st.info("Chave da API Gemini não configurada. Use o menu lateral para adicionar sua chave ao sistema.", icon="ℹ️")
 
 # Layout topo da pagina
 with st.container():
     # --- Definição de Datas Padrão - Datas não dinamicas somente na versão de apresentação, devida limitação dos dados. ---
     data_agora = datetime.now()
     data_inicio_dados = "2025-03-01"
-    data_inicio_padrao = "2025-07-15" 
+    data_inicio_padrao = "2025-07-15"
     data_fim_padrao = "2025-07-28"
 
     col_date_top = st.columns([4,1,1,1.8,1.8], vertical_alignment="center")
@@ -125,22 +98,22 @@ with st.container():
 # --- Consulta Principal ao Banco de Dados (CSV) ---
 with st.container():
     # Carrega os dados usando a nova função centralizada
-    df_vendas_filtrado = mdls.carregar_dados(      
-        file_csv="dados_export.csv",  
+    df_vendas_filtrado = mdls.carregar_dados(
+        file_csv="dados_export.csv",
         data_inicio=data_inicio,
         data_fim_query=data_fim_query
     )
     #st.dataframe(df_vendas_filtrado)
 
-    df_vw_resumo_venda_itens = mdls.carregar_dados_extras(      
-        file_csv="dados_export2.csv",  
+    df_vw_resumo_venda_itens = mdls.carregar_dados_extras(
+        file_csv="dados_export2.csv",
         data_inicio=data_inicio,
         data_fim_query=data_fim_query
     )
     #st.dataframe(df_vw_resumo_venda_itens)
 
 # --- Processamento Inicial de Dados --- #
-with st.container(): 
+with st.container():
     progresso_tratamento_dados = st.progress(0, text="Iniciando Tratamento de Dados Solicitados")
     # Converte colunas numéricas após carregamento, tratando erros
     numeric_cols = ['preco_venda', 'preco_custo', 'quantidade', 'estoque', 'total_liquido_item']
@@ -275,20 +248,20 @@ with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
 
 
 # Graficos - Tabela top itens - Gemini
-with st.container(): 
+with st.container():
         # --- Gráficos e Análises Gerais (se houver dados filtrados) ---
-        tab_graficos, tab_top20 = st.tabs(["📈 Gráficos", "🎖️ TOP 20"])
+        tab_graficos, tab_top20, tab_rup_estoque = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "Estoque/Ruptura"])
         with tab_graficos:
             st.subheader("Visualizações Gráficas")
             col_graph1, col_graph2= st.columns(2, border=True, vertical_alignment="top")
             with col_graph1:
                 with st.container(border=True):
-                    # Vendas Líquidas por Dia                
-                    df_vendas_dia = df_validos.groupby(df_validos['dh_emissao'].dt.date)[['total_liquido_item', 'custo_total_item', 'total_tributos', 'desconto']].sum()                      
+                    # Vendas Líquidas por Dia
+                    df_vendas_dia = df_validos.groupby(df_validos['dh_emissao'].dt.date)[['total_liquido_item', 'custo_total_item', 'total_tributos', 'desconto']].sum()
                     if not df_vendas_dia.empty:
-                        graph_venda_liquida = px.line(df_vendas_dia, 
-                                                    x=df_vendas_dia.index, 
-                                                    y=['desconto', 'custo_total_item', 'total_tributos','total_liquido_item' ], 
+                        graph_venda_liquida = px.line(df_vendas_dia,
+                                                    x=df_vendas_dia.index,
+                                                    y=['desconto', 'custo_total_item', 'total_tributos','total_liquido_item' ],
                                                     title="Vendas Líquidas por Dia",
                                                     color='variable',
                                                     labels={'dh_emissao': 'Data',
@@ -313,9 +286,9 @@ with st.container():
                     #st.table(df_vendas_setor)
                     if not df_vendas_setor.empty:
                         graph_venda_setor = px.bar(
-                            df_vendas_setor, 
-                            x=df_vendas_setor.index, 
-                            y=df_vendas_setor.values, 
+                            df_vendas_setor,
+                            x=df_vendas_setor.index,
+                            y=df_vendas_setor.values,
                             title="Itens Vendidos por Setor",
                             barmode='stack',
                             color_discrete_sequence=["#58A0C8"],
@@ -324,14 +297,14 @@ with st.container():
                         st.plotly_chart(graph_venda_setor)
                     else:
                         st.caption("Sem dados de setor para exibir.")
-                    
+
                 graph1_colunas = st.columns(2)
                 with graph1_colunas[0]:
                     with st.container(border=True):
-                        # Grafico de vendas por Forma de Pagamento   
+                        # Grafico de vendas por Forma de Pagamento
                         df_vendas_forma_pagamento = df_validos['nome'].value_counts()
-                        graph_venda_for_pagamento = px.bar(df_vendas_forma_pagamento, 
-                                                    x=df_vendas_forma_pagamento.values, 
+                        graph_venda_for_pagamento = px.bar(df_vendas_forma_pagamento,
+                                                    x=df_vendas_forma_pagamento.values,
                                                     y=df_vendas_forma_pagamento.index,
                                                     color_discrete_sequence=["#FFBC4C"],
                                                     title="Itens Vendidos por Forma de Pagamento",
@@ -343,28 +316,28 @@ with st.container():
                     with st.container(border=True):
                         # Grafico de cancelamentos por Supevisor
                         df_cancel_totais_supervisor = df_vw_resumo_venda_itens["dfsupervisor_cancelamento_cupom"].value_counts()
-                        graph_cancel_supervisor = px.bar(df_cancel_totais_supervisor, 
-                                                    y=df_cancel_totais_supervisor.values, 
-                                                    x=df_cancel_totais_supervisor.index, 
+                        graph_cancel_supervisor = px.bar(df_cancel_totais_supervisor,
+                                                    y=df_cancel_totais_supervisor.values,
+                                                    x=df_cancel_totais_supervisor.index,
                                                     title="Cancelamentos por Supervisor",
                                                     orientation='v',
                                                     color_discrete_sequence=["#58A0C8"],
                                                     labels={'y': 'Cancelamentos', 'dfsupervisor_cancelamento_cupom': 'Fiscal'}
                                                     )
                         st.plotly_chart(graph_cancel_supervisor)
-                    
+
             with col_graph2:
                 with st.container(border=True):
-                    # Vendas por Categoria                
+                    # Vendas por Categoria
                     df_vendas_categoria = df_validos['desc_categoria'].value_counts().head(20) # Top 20
                     if not df_vendas_categoria.empty:
                         graph_venda_categoria = px.bar(
-                            df_vendas_categoria, 
-                            y=df_vendas_categoria.values, 
-                            x=df_vendas_categoria.index, 
+                            df_vendas_categoria,
+                            y=df_vendas_categoria.values,
+                            x=df_vendas_categoria.index,
                             title="Itens Vendidos por Categoria",
                             orientation='v',
-                            color_discrete_sequence=["#58A0C8"],                       
+                            color_discrete_sequence=["#58A0C8"],
                             labels={'y': 'Vendas', 'desc_categoria': 'Categoria'}
                             )
                         st.plotly_chart(graph_venda_categoria)
@@ -377,23 +350,23 @@ with st.container():
                     with st.container(border=True):
                         # Vendas por PDV (Série) - Só mostra se 'Todas' as séries estiverem selecionadas
                         df_vendas_pdv = df_vendas_filtrado['serie'].value_counts()
-                        graph_vendas_pdv = px.pie(df_vendas_pdv, 
-                                                values=df_vendas_pdv.values, 
-                                                names=df_vendas_pdv.index, 
+                        graph_vendas_pdv = px.pie(df_vendas_pdv,
+                                                values=df_vendas_pdv.values,
+                                                names=df_vendas_pdv.index,
                                                 title="Vendas por PDV",
                                                 color_discrete_sequence=["#58A0C8"],
                                                 hole=0.3,
                                                 labels={'value': 'Vendas (R$)', 'serie': 'PDV'}
                                                 )
                         st.plotly_chart(graph_vendas_pdv)
-                with graph2_colunas[0]:  
+                with graph2_colunas[0]:
                     with st.container(border=True):
                          # Total de Cancelamentos
                         df_total_motivos_cancelamentos = df_vw_resumo_venda_itens["dfmotivo_cancelamento_cupom"].value_counts()
                         graph_mot_cancelamentos_total = px.bar(
-                            df_total_motivos_cancelamentos, 
-                            x=df_total_motivos_cancelamentos.values, 
-                            y=df_total_motivos_cancelamentos.index, 
+                            df_total_motivos_cancelamentos,
+                            x=df_total_motivos_cancelamentos.values,
+                            y=df_total_motivos_cancelamentos.index,
                             title="Cancelamentos por Motivo",
                             orientation='h',
                             color_discrete_sequence=["#FFBC4C"],
@@ -401,20 +374,20 @@ with st.container():
                             )
                         st.plotly_chart(graph_mot_cancelamentos_total)
                 with st.container(border=True):
-                    
+
                     # Vendas por Colaborador
                     df_vendas_colaboradores = df_vw_resumo_venda_itens['dfnome_operador'].value_counts()
                     graph_vendas_colaborador = px.bar(
-                        df_vendas_colaboradores, 
-                        x=df_vendas_colaboradores.values, 
-                        y=df_vendas_colaboradores.index, 
+                        df_vendas_colaboradores,
+                        x=df_vendas_colaboradores.values,
+                        y=df_vendas_colaboradores.index,
                         title="Vendas por Colaborador",
                         orientation='h',
                         color_discrete_sequence=["#58A0C8"],
                         labels={'x': 'Vendas (R$)', 'dfnome_operador': 'Colaborador'}
                         )
                     st.plotly_chart(graph_vendas_colaborador)
-        
+
         with tab_top20:
             # Agrupa os dados por produto para obter os totais de vendas e quantidade.
             # Isso é necessário para que o ranking de produtos funcione corretamente,
@@ -427,18 +400,49 @@ with st.container():
                 categoria_item=('desc_categoria', 'first'),
                 estoque_item=('estoque', 'first')
             ).reset_index()
-            col_top_20_tab = st.columns(3)
-            with col_top_20_tab[0]:
-                pass
-            with col_top_20_tab[1]:
-                pass
-            with col_top_20_tab[2]:
-                pass
-            df_top_15 = mdls.exibir_ranking_top_produtos(df_produtos_agregados, 15)
-            
+
+            df_top_15 = mdls.exibir_ranking_top_produtos(df_produtos_agregados, 20)
+
+        with tab_rup_estoque:
+
+            df_sorted = df_produtos_agregados.sort_values('total_liquido_item', ascending=False).head(20)
+            df_sorted = df_sorted.rename(columns={
+                'nome_item': 'Produto',
+                'quantidade': 'Unidades Vendidas',
+                'estoque_item': 'Estoque',
+                'total_liquido_item': 'Receita Total',
+                'setor_item': 'Setor',
+                'categoria_item': 'Categoria',
+                'desconto_liquido_item': 'Descontos'
+            })
+
+            st.subheader("Produtos com Risco de Ruptura")
+            col_top_rup_tab = st.columns([2,1])
+            with col_top_rup_tab[0]:
+                limiar_ruptura = st.slider("Limiar de Ruptura (Quantidade KG|UND)",min_value=1, max_value=1000, value=100, step=10)
+                produtos_em_risco = df_sorted[df_sorted['Estoque'].astype(int) <= limiar_ruptura]
+                produtos_em_risco  = produtos_em_risco[['Produto','Setor', 'Estoque', 'Unidades Vendidas']]
+                styled_df = produtos_em_risco.style \
+                .background_gradient(cmap='Greens', subset=['Unidades Vendidas']) \
+                .background_gradient(cmap='Reds', subset=['Estoque']) \
+                .format({'Unidades Vendidas': '{:,.0f}', 'Estoque' : '{:,.0f}' })
+
+                st.warning(f"{len(produtos_em_risco)} produto(s) com estoque abaixo do limiar de ruptura (≤ {limiar_ruptura} unidades).")
+
+                if not produtos_em_risco.empty:
+                    st.dataframe(styled_df, use_container_width=True)
+                else:
+                    st.success("Não há produtos com risco de ruptura imadiato")
+            with col_top_rup_tab[1]:
+                graph_pie_setores = px.pie(
+                    data_frame=produtos_em_risco['Setor'],
+                    names=produtos_em_risco['Setor'].unique(),
+                    values=produtos_em_risco['Setor'].value_counts())
+                st.plotly_chart(graph_pie_setores)
+
             '''
             col_tabela1, col_tabela2 = st.columns(2)
-            
+
             with col_tabela1:
                 # Top Itens Mais Vendidos (em quantidade)
                 st.markdown("**Top 20 Itens Mais Vendidos (Quantidade)**")

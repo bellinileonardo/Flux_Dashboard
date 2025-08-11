@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-
 ################## Engine Banco de Dados ####################
 
 # Cria pagina mais interativa para o Top Itens (Func. Gerada pelo Gemini)(Estudo)
@@ -78,7 +77,7 @@ def exibir_aba_top20(data):
         # Ordena o DataFrame pela receita (total_liquido_item) para uma visualização mais intuitiva
         df_sorted = df_top_n.sort_values('quantidade', ascending=True).head(top_n)
         st.dataframe(df_sorted)
-        
+
 
         fig = px.bar(
             df_sorted,
@@ -112,7 +111,7 @@ def exibir_aba_top20(data):
             customdata=df_sorted[['quantidade']] # Adiciona 'quantidade' aos dados do hover
         )
 
-        
+
         st.plotly_chart(fig, use_container_width=True)
 
     else:
@@ -134,9 +133,6 @@ def exibir_aba_top20(data):
         else:
             st.warning("Tabela vazia devido aos filtros aplicados.")
 
-import streamlit as st
-import plotly.express as px
-import pandas as pd
 
 def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
     st.subheader(f"📊 Ranking Top {top_n} Produtos por Receita de Vendas")
@@ -157,12 +153,12 @@ def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
         'desconto_liquido_item': 'Descontos'
 
     })
-        
-    ranking_top_coluna = st.columns(3)
+
+    ranking_top_coluna = st.columns(2)
     with ranking_top_coluna[0]:
         # --- 1. Identificação de Produtos com Baixa Quantidade (possível ruptura) ---
-        with st.container(border=True):  
-            st.subheader("Rank de Produtos por Setor") 
+        with st.container(border=True):
+            st.subheader("Rank de Produtos por Setor")
             st.plotly_chart(px.bar(df_sorted['Setor'].value_counts(),
                                    labels={
                                        'index': 'Setor',
@@ -170,12 +166,14 @@ def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
                                    },
                                    color=df_sorted['Setor'].value_counts().index,
                                    #title="Rank de Produtos por Setor"
-                                   )   
+                                   )
                             )
-                
-    with ranking_top_coluna[1]:        
+
+    with ranking_top_coluna[1]:
     # --- 3. Tabela Detalhada com Estilo ---
-        with st.container(border=True):            
+        with st.container(border=True):
+            df_sorted = df_sorted.drop(['Setor', 'Categoria'], axis=1)
+
             styled_df = df_sorted.style \
                 .background_gradient(cmap='Greens', subset=['Unidades Vendidas']) \
                 .background_gradient(cmap='Reds', subset=['Descontos']) \
@@ -183,21 +181,6 @@ def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
                 .format({'Unidades Vendidas': '{:,.0f}', 'Receita Total': 'R$ {:,.2f}','Descontos': 'R$ {:,.2f}'})
             st.subheader("Produtos por Receita de Vendas")
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
-
-    with ranking_top_coluna[2]:
-        with st.container(border=True):    
-            st.subheader("Produtos com Risco de Ruptura")
-            limiar_ruptura = st.slider("Limiar de Ruptura (Quantidade)",min_value=1, max_value=1000, value=100, step=10)
-            produtos_em_risco = df_sorted[df_sorted['Estoque'] <= limiar_ruptura]
-            if not produtos_em_risco.empty:                
-                st.warning(f"{len(produtos_em_risco)} produto(s) com estoque abaixo do limiar de ruptura (≤ {limiar_ruptura} unidades).")
-                
-                st.dataframe(produtos_em_risco[['Produto', 'Estoque', 'Unidades Vendidas']].sort_values('Unidades Vendidas'),
-                            use_container_width=True)
-            else:
-                st.success("Não há produtos com risco de ruptura imadiato")
-            
-
 
 
 # Primeira função de carregamento de dados, mais pesada(Estudo)
@@ -251,22 +234,15 @@ def carregar_dados_extras(file_csv,data_inicio, data_fim_query):
         st.error(f"Ocorreu um erro ao ler o arquivo CSV: {e}")
         st.stop()
 
-def dados_enviados_ia(data_ia):
-    data_ia = []
-    data_ia_gerada = pd.merge([data_ia])
-    return data_ia_gerada
-
-
-
 # Menu TOP para paginas do app
 def menu_top_page():
     with st.container():
         col_top_menu = st.columns(4)
         with col_top_menu[0]:
-            st.page_link("Home.py", label="Home", icon="🏠", use_container_width=True)
+            st.page_link("Home.py", label="Home", help='Pagina Principal - Graficos - KPI´s - Top itens - Ruptura de Estoque', icon="🏠", use_container_width=True)
         with col_top_menu[1]:
-            st.page_link("pages/flux_ia.py", label="IA_FLUX", icon="🤖", use_container_width=True)
+            st.page_link("pages/flux_ia.py", label="FLUXO - A IA do Varejo ", help="Avaliação Inteligente para os dados visualizados.", icon="🤖", use_container_width=True)
         with col_top_menu[2]:
-            st.page_link("http://www.google.com", label="Flux SoftHouse", icon="ℹ️", use_container_width=True)
+            st.page_link("http://www.google.com", label="Flux SoftHouse", help='Sua Casa de Softwares e Automações', icon="ℹ️", use_container_width=True)
         with col_top_menu[3]:
-            st.page_link("http://www.google.com", label="Google", icon="🌎", use_container_width=True)
+            st.page_link("http://www.google.com", label="Google", help='Abra a pagina do Google', icon="🌎", use_container_width=True)

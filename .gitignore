@@ -181,3 +181,10 @@ cython_debug/
 .cursorindexingignore
 .streamlit/secrets.toml
 requirements.txt_old
+.streamlit/secrets.toml
+.streamlit/secrets.toml
+/etc
+/Include
+/Scripts
+*.json
+/share
