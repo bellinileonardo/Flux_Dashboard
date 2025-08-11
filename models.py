@@ -178,7 +178,8 @@ def exibir_ranking_top_produtos(df_top_n: pd.DataFrame, top_n: int):
                 .background_gradient(cmap='Greens', subset=['Unidades Vendidas']) \
                 .background_gradient(cmap='Reds', subset=['Descontos']) \
                 .background_gradient(cmap='Blues', subset=['Receita Total']) \
-                .format({'Unidades Vendidas': '{:,.0f}', 'Receita Total': 'R$ {:,.2f}','Descontos': 'R$ {:,.2f}'})
+                .background_gradient(cmap='Oranges', subset=['Estoque']) \
+                .format({'Unidades Vendidas': '{:,.0f}','Estoque':'{:,.0f}', 'Receita Total': 'R$ {:,.2f}','Descontos': 'R$ {:,.2f}'})
             st.subheader("Produtos por Receita de Vendas")
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
 

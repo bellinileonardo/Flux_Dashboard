@@ -250,7 +250,7 @@ with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
 # Graficos - Tabela top itens - Gemini
 with st.container():
         # --- Gráficos e Análises Gerais (se houver dados filtrados) ---
-        tab_graficos, tab_top20, tab_rup_estoque = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "Estoque/Ruptura"])
+        tab_graficos, tab_top20, tab_rup_estoque = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "⏱️ Estoque/Ruptura"])
         with tab_graficos:
             st.subheader("Visualizações Gráficas")
             col_graph1, col_graph2= st.columns(2, border=True, vertical_alignment="top")
@@ -389,9 +389,6 @@ with st.container():
                     st.plotly_chart(graph_vendas_colaborador)
 
         with tab_top20:
-            # Agrupa os dados por produto para obter os totais de vendas e quantidade.
-            # Isso é necessário para que o ranking de produtos funcione corretamente,
-            # ao invés de apenas pegar as primeiras 20 linhas de vendas.
             df_produtos_agregados = df_validos.groupby('nome_item').agg(
                 quantidade=('quantidade', 'sum'),
                 total_liquido_item=('total_liquido_item', 'sum'),
@@ -401,10 +398,9 @@ with st.container():
                 estoque_item=('estoque', 'first')
             ).reset_index()
 
-            df_top_15 = mdls.exibir_ranking_top_produtos(df_produtos_agregados, 20)
+            mdls.exibir_ranking_top_produtos(df_produtos_agregados, 20)
 
         with tab_rup_estoque:
-
             df_sorted = df_produtos_agregados.sort_values('total_liquido_item', ascending=False).head(20)
             df_sorted = df_sorted.rename(columns={
                 'nome_item': 'Produto',
@@ -415,7 +411,6 @@ with st.container():
                 'categoria_item': 'Categoria',
                 'desconto_liquido_item': 'Descontos'
             })
-
             st.subheader("Produtos com Risco de Ruptura")
             col_top_rup_tab = st.columns([2,1])
             with col_top_rup_tab[0]:
@@ -424,7 +419,7 @@ with st.container():
                 produtos_em_risco  = produtos_em_risco[['Produto','Setor', 'Estoque', 'Unidades Vendidas']]
                 styled_df = produtos_em_risco.style \
                 .background_gradient(cmap='Greens', subset=['Unidades Vendidas']) \
-                .background_gradient(cmap='Reds', subset=['Estoque']) \
+                .background_gradient(cmap='Blues', subset=['Estoque']) \
                 .format({'Unidades Vendidas': '{:,.0f}', 'Estoque' : '{:,.0f}' })
 
                 st.warning(f"{len(produtos_em_risco)} produto(s) com estoque abaixo do limiar de ruptura (≤ {limiar_ruptura} unidades).")
@@ -434,29 +429,9 @@ with st.container():
                 else:
                     st.success("Não há produtos com risco de ruptura imadiato")
             with col_top_rup_tab[1]:
+                st.markdown("#### Setores Envolvidos")
                 graph_pie_setores = px.pie(
                     data_frame=produtos_em_risco['Setor'],
                     names=produtos_em_risco['Setor'].unique(),
                     values=produtos_em_risco['Setor'].value_counts())
                 st.plotly_chart(graph_pie_setores)
-
-            '''
-            col_tabela1, col_tabela2 = st.columns(2)
-
-            with col_tabela1:
-                # Top Itens Mais Vendidos (em quantidade)
-                st.markdown("**Top 20 Itens Mais Vendidos (Quantidade)**")
-                df_validos = df_validos.astype({'quantidade': 'int'})
-                df_top_itens = df_validos.groupby('nome_item')['quantidade'].sum().sort_values(ascending=False).reset_index().head(20)
-                df_top_itens = df_top_itens.rename(columns={'nome_item': 'Produto', 'quantidade': 'Quantidade'})
-                df_top_itens = df_top_itens.style.set_properties(color="black", align="right")
-                st.dataframe(df_top_itens, use_container_width=True, hide_index=True)
-
-            with col_tabela2:
-                # Itens com Maior Faturamento
-                st.markdown("**Top 20 Itens por Faturamento (Venda Líquida)**")
-                df_top_faturamento = df_validos.groupby('nome_item')['total_liquido_item'].sum().sort_values(ascending=False).reset_index().head(20)
-                df_top_faturamento['total_liquido_item'] = df_top_faturamento['total_liquido_item'].apply(format_currency)
-                df_top_faturamento = df_top_faturamento.rename(columns={'nome_item': 'Produto', 'total_liquido_item': 'Faturamento Total'})
-                st.dataframe(df_top_faturamento, use_container_width=True, hide_index=True)
-            '''
