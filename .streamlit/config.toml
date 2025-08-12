@@ -76,7 +76,7 @@
 # If there are no options left, hide the menu.
 
 # Default: "auto"
-toolbarMode = "developer"
+toolbarMode = "viewer"
 
 # Controls whether to display the default sidebar page navigation in a
 # multi-page app. This only applies when app's pages are defined by the
@@ -109,7 +109,7 @@ fastReruns = true
 # or when the execution environment will stop supporting it in the future.
 
 # Default: false
-enforceSerializableSessionState = true
+# enforceSerializableSessionState = true
 
 # Adjust how certain 'options' widgets like radio, selectbox, and
 # multiselect coerce Enum members when the Enum class gets re-defined
@@ -123,7 +123,7 @@ enforceSerializableSessionState = true
 # member values match.
 
 # Default: "nameOnly"
-# enumCoercion = "nameOnly"
+enumCoercion = "nameAndValue"
 
 
 [server]

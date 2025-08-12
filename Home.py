@@ -54,7 +54,7 @@ with st.container():
 
 # Layout topo da pagina
 with st.container():
-    # --- Definição de Datas Padrão - Datas não dinamicas somente na versão de apresentação, devida limitação dos dados. ---
+    # --- Definição de Datas Padrão - Datas não dinâmicas somente na versão de apresentação, devida limitação dos dados. ---
     data_agora = datetime.now()
     data_inicio_dados = "2025-03-01"
     data_inicio_padrao = "2025-07-15"
@@ -119,7 +119,7 @@ with st.container():
     numeric_cols = ['preco_venda', 'preco_custo', 'quantidade', 'estoque', 'total_liquido_item']
     for col in numeric_cols:
         df_vendas_filtrado[col] = pd.to_numeric(df_vendas_filtrado[col], errors='coerce')
-    progresso_tratamento_dados.progress(10, text="Tratando Dados Numericos")
+    progresso_tratamento_dados.progress(10, text="Tratando Dados Numéricos")
     # Converte coluna de data/hora
     df_vendas_filtrado['dh_emissao'] = pd.to_datetime(df_vendas_filtrado['dh_emissao'], errors='coerce')
     progresso_tratamento_dados.progress(50, text="Removendo Linhas Vazias")
@@ -130,7 +130,7 @@ with st.container():
     # Trata casos onde preco_custo pode ser nulo/inválido
     progresso_tratamento_dados.progress(90, text="Calculando o custo total por item (preço de custo * quantidade)")
     df_vendas_filtrado['custo_total_item'] = df_vendas_filtrado['preco_custo'].fillna(0) * df_vendas_filtrado['quantidade']
-    progresso_tratamento_dados.progress(100, text="Concluido")
+    progresso_tratamento_dados.progress(100, text="Concluído")
     progresso_tratamento_dados.empty()
 
     # --- Cálculos de KPIs (Baseados no DataFrame Filtrado) ---
@@ -230,7 +230,7 @@ with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
                     content=f"{total_itens_vendidos}",
                     description=f"Itens Cancelados: {total_itens_cancelados} ",
                     key="card_itens")
-    with col_kpi_02[3]: # Ticket Medio
+    with col_kpi_02[3]: # Ticket Médio
             ui.metric_card(title="Ticket Médio",
                         content=format_currency(vlr_ticket_medio),
                         description=f"{total_atendimentos} Atendimentos",
@@ -247,7 +247,7 @@ with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
         key="card_itens_transacao")
 
 
-# Graficos - Tabela top itens - Gemini
+# Gráficos - Tabela top itens - Gemini
 with st.container():
         # --- Gráficos e Análises Gerais (se houver dados filtrados) ---
         tab_graficos, tab_top20, tab_rup_estoque = st.tabs(["📈 Gráficos", "🎖️ TOP 20", "⏱️ Estoque/Ruptura"])
@@ -301,7 +301,7 @@ with st.container():
                 graph1_colunas = st.columns(2)
                 with graph1_colunas[0]:
                     with st.container(border=True):
-                        # Grafico de vendas por Forma de Pagamento
+                        # Gráfico de vendas por Forma de Pagamento
                         df_vendas_forma_pagamento = df_validos['nome'].value_counts()
                         graph_venda_for_pagamento = px.bar(df_vendas_forma_pagamento,
                                                     x=df_vendas_forma_pagamento.values,
@@ -314,7 +314,7 @@ with st.container():
                         st.plotly_chart(graph_venda_for_pagamento)
                 with graph1_colunas[1]:
                     with st.container(border=True):
-                        # Grafico de cancelamentos por Supevisor
+                        # Gráfico de cancelamentos por Supervisor
                         df_cancel_totais_supervisor = df_vw_resumo_venda_itens["dfsupervisor_cancelamento_cupom"].value_counts()
                         graph_cancel_supervisor = px.bar(df_cancel_totais_supervisor,
                                                     y=df_cancel_totais_supervisor.values,
@@ -427,7 +427,7 @@ with st.container():
                 if not produtos_em_risco.empty:
                     st.dataframe(styled_df, use_container_width=True)
                 else:
-                    st.success("Não há produtos com risco de ruptura imadiato")
+                    st.success("Não há produtos com risco de ruptura imediato")
             with col_top_rup_tab[1]:
                 st.markdown("#### Setores Envolvidos")
                 graph_pie_setores = px.pie(

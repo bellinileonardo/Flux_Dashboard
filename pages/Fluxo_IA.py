@@ -28,7 +28,7 @@ with st.container():
 
 mdls.menu_top_page()
 st.subheader("📊 Bem-vindo(a) ao FLUXO, sua IA para análise de varejo!")
-st.caption("Esta analise de DEMONSTRAÇÂO usa a interface GEMINI do Google. Os dados enviados são limitados a 800 registros, para evitar carga excessiva na IA")
+st.caption("Esta analise de DEMONSTRAÇÃO usa a interface GEMINI do Google. Os dados enviados são limitados a 800 registros, para evitar carga excessiva na IA")
 
 if gemini_client:
     #st.info("Faça uma pergunta sobre os dados filtrados atualmente exibidos.", icon="❓")
@@ -79,7 +79,7 @@ if gemini_client:
 
     col_top_header = st.columns(2)
     with col_top_header[0]:
-        with st.expander("Ver mais Detalhes sobre o Fluxo", expanded=False, icon="🚨"):
+        with st.expander("Ver mais Detalhes sobre o Fluxo", expanded=True, icon="🚨"):
             col_fluxo_topo = st.columns(2)
             with col_fluxo_topo[0]:
                 st.markdown("""
@@ -95,10 +95,6 @@ if gemini_client:
                 relevância para sua receita e lucratividade.
                 - **Otimização de Processos**: Análise dos padrões de cancelamentos e descontos aplicados,
                 revelando oportunidades para reduzir perdas e aprimorar políticas comerciais.
-
-                **Próximo Passo:**
-                Para iniciar esta análise estratégica, clique no botão abaixo. O FLUXO processará os dados
-                e apresentará recomendações personalizadas para o seu negócio.
                 """, width='stretch')
 
             with col_fluxo_topo[1]:
@@ -110,19 +106,13 @@ if gemini_client:
                 - **Colaboradores Envolvidos:** **{total_operadores_data_ia}** Operadores de Caixa.
                 - **Variedade de Itens:** **{total_itens_data_ia}** Produtos distintos.
                 - **Top 5 Setores:** {', '.join(top_5_setores) if top_5_setores else 'N/A'}
-                - **Top 5 Categorias:** {', '.join(top_5_categorias) if top_5_categorias else 'N/A'}
-            """)
+                - **Top 5 Categorias:** {', '.join(top_5_categorias) if top_5_categorias else 'N/A'} """)
 
     with col_top_header[1]:
         bnt_analise_gemini = st.button(f"Iniciar Análise Estratégica com FLUXO IA", key="ia_button_gemini_flux", type="primary", use_container_width=True)
 
-        with st.container():
-            with st.popover(f"Ver dados Enviados a IA - Total de Registros Enviados: {total_registros_enviados_ia}", use_container_width=True):
-                st.markdown("Top 10 informações enviadas para IA")
-                st.dataframe(data_para_ia.head(10), use_container_width=True, hide_index=True)
-
-    with st.container():
-        if bnt_analise_gemini == True:
+        with st.container(border=True, key='ctn_resposta_ia_gemini'):
+            if bnt_analise_gemini == True:
                 with st.spinner("Consultando a IA... Por favor, aguarde."):
                     st.toast("Analisando dados Enviados")
                     try:
@@ -210,11 +200,15 @@ if gemini_client:
                             ### Recomendações Estratégicas
                             Finalize com 1 a 3 ações práticas e priorizadas que a gestão pode tomar para aumentar o lucro, reduzir custos ou melhorar a eficiência.
 
+                            ### Relatório de compras casadas
+                            Verifique os itens dentro dos cupons e avalie vendas casadas. Um exemplo, sempre que tem manteiga no cupom o cliente leva pão no mesmo cupom.
+                            avalie estas compras e coloque uma sessão no relatório com 10 itens com compras casadas.
+
                             # DIRETRIZES FINAIS
                             - Seja analítico e orientado a dados.
                             - Foque em insights que levem a resultados financeiros positivos.
                             - Entregue uma análise de alto nível, como um verdadeiro consultor de negócios.
-    """
+                            """
 
                         # Chamada para a API do Gemini
                         # O Gemini geralmente não usa 'roles' (system/user) da mesma forma que OpenAI.
@@ -262,6 +256,16 @@ if gemini_client:
                                 st.json(response.prompt_feedback)
                     except Exception as e: # Captura erros gerais da API do Google ou outros
                         st.error(f"Ocorreu um erro inesperado ao processar a análise com Gemini: {e}", icon="🚨")
+            else:
+                st.markdown('''**Próximo Passo:**
+                Para iniciar esta análise estratégica, clique no botão acima para que O FLUXO processe os dados
+                e apresentare recomendações personalizadas para o seu negócio.''')
+
+        with st.container():
+            with st.popover(f"Ver dados Enviados a IA - Total de Registros Enviados: {total_registros_enviados_ia}", use_container_width=True):
+                st.markdown("Top 10 informações enviadas para IA")
+                st.dataframe(data_para_ia.head(10), use_container_width=True, hide_index=True)
+
 
 else:
     st.warning("A funcionalidade de Análise Inteligente está desativada. Verifique a configuração da chave da API no menu lateral.", icon="🤖")
