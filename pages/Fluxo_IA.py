@@ -26,7 +26,31 @@ with st.container():
         st.info("Chave da API Gemini não configurada. Use o menu lateral para adicionar sua chave ao sistema.", icon="ℹ️")
 
 
-mdls.menu_top_page()
+    mdls.menu_top_page()
+
+    # --- Estilização CSS ---
+    page_home = f"""
+            <style>
+                [data-testid="stAppViewContainer"] {{
+                    background-color: withesmoke;
+                    background-opacity: 6;
+                    background-position: center;
+                    background-repeat: no-repeat;
+                    background-size: cover;
+                }}
+                [data-testid="stToolbar"]{{
+                    background-color: rgb(17, 63, 103)
+                }}
+                [data-testid="stSidebarContent"]{{
+                    background-color: rgba(17, 63, 103, 0.2)
+                }}
+                [data-testid="stIconMaterial"]{{
+                    color:white;
+                }}
+            </style>
+            """
+st.markdown(page_home, unsafe_allow_html=True)
+
 st.subheader("📊 Bem-vindo(a) ao FLUXO, sua IA para análise de varejo!")
 st.caption("Esta analise de DEMONSTRAÇÃO usa a interface GEMINI do Google. Os dados enviados são limitados a 800 registros, para evitar carga excessiva na IA")
 
