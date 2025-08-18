@@ -110,8 +110,7 @@ with st.container():
         data_inicio=data_inicio,
         data_fim_query=data_fim_query
     )
-    #st.dataframe(df_vw_resumo_venda_itens)
-
+    
 # --- Processamento Inicial de Dados --- #
 with st.container():
     progresso_tratamento_dados = st.progress(0, text="Iniciando Tratamento de Dados Solicitados")
@@ -179,7 +178,6 @@ with st.container():
     giro_estoque = vlr_total_custo / valor_total_estoque_atual if valor_total_estoque_atual > 0 else 0
 
 # Cards de KPI
-
 with st.expander("Quadro de KPI´s", expanded=True): # Cards de KPI
     # --- Cards de Métricas ---
     col_kpi_01 = st.columns(6)
