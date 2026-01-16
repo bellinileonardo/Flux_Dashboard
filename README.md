@@ -1,29 +1,58 @@
 -----
 
-# 🚀 Flux\_Dashboard: Seu Varejo na Velocidade da Luz\! 
+# 🚀 Flux Dashboard: Inteligência de Varejo com Agentes de IA
 #### [Acessar Versão Online](https://frontfluxdashboard.streamlit.app/)
 
-Bem-vindo(a) ao repositório do **Flux Dash**, um dashboard interativo projetado para transformar a maneira como você enxerga e entende os dados do seu negócio de varejo. Esqueça as planilhas estáticas e as análises demoradas. Com o Flux Dash, o poder da informação está na ponta dos seus dedos, de forma rápida, clara e, o mais importante, visualmente cativante.
+O Flux Dashboard não é apenas um painel de visualização; é uma plataforma de Inteligência Operacional que integra dados reais de ERP com uma camada de raciocínio baseada em IA Generativa. Ele foi desenhado para eliminar o abismo entre o dado bruto e a decisão estratégica.
 
-## ✨ O que o Flux Dash oferece?
+# 🤖 A Inteligência por trás do Flux
+O grande diferencial do projeto é o ecossistema de Agentes de IA Personalizados. Não utilizamos apenas um chat genérico; implementamos uma estrutura de consultoria técnica:
 
-Criado para ser o copiloto do seu sucesso, o Flux Dash não é apenas mais um painel de controle; é uma ferramenta inteligente que traduz a complexidade dos dados em insights acionáveis. Aqui está o que espera por você:
+** Agentes de Setor: Prompts especializados para as verticais de Vendas, Estoque e Financeiro. Cada agente possui um "System Prompt" que define seu comportamento, métricas de sucesso e tom de voz.
 
-  - 📊 **Visualizações Claras e Intuitivas**: Mergulhe em gráficos e tabelas que simplificam a compreensão de seus **Key Performance Indicators (KPIs)** de varejo mais importantes. Entenda, de forma instantânea, o que está funcionando e o que precisa de atenção.
-    <img width="1833" height="865" alt="image" src="https://github.com/user-attachments/assets/4b856603-9f5e-428b-a5e7-80d7150b8943" />
+** Consultor de IA Contextual: Utiliza RAG (Retrieval-Augmented Generation) para analisar os dados que estão em tela. Se você filtrar uma queda em março, o agente "lê" o DataFrame e explica a causa raiz.
 
-    <img width="1808" height="668" alt="image" src="https://github.com/user-attachments/assets/3d518f1f-38a2-4293-9264-5feb64c011ba" />
+** Orquestração: Baseado em LangChain e alimentado pelo Google Gemini, garantindo respostas rápidas e precisas com foco em varejo.
 
-
-  - 🔎 **Fluxo IA**: O FLUXO está pronto para transformar seus dados brutos em inteligência de negócio acionável. Nossa IA, alimentada pelo Gemini do Google, fará uma análise profunda das transações de vendas do período selecionado, focando em otimização de resultados e eficiência operacional.
-    <img width="1168" height="757" alt="image" src="https://github.com/user-attachments/assets/afb96c99-5c84-4ef8-8ec8-0cd7e39dc55a" />
-
-
-  - 📈 **Análise de Itens, Projeções de vendas e Rupturas de estoque**: Olhe para o passado para planejar o futuro. Analise e utilize as **projeções** integradas para se antecipar a mudanças e tomar decisões estratégicas mais seguras.
-    <img width="1834" height="825" alt="image" src="https://github.com/user-attachments/assets/8111d71f-6bd9-46bf-9748-7b4fe45b82ab" />
-
-    <img width="1835" height="832" alt="image" src="https://github.com/user-attachments/assets/91869f41-47b8-455e-8303-f4c284d984eb" />
+# 📊 Visualizações Claras e Intuitivas
+Mergulhe em gráficos e tabelas que simplificam a compreensão de seus **Key Performance Indicators (KPIs)** de varejo mais importantes. Entenda, de forma instantânea, o que está funcionando e o que precisa de atenção.
+    <img width="1833" height="865" alt="image" src="https://github.com/user-attachments/assets/4b856603-9f5e-428b-a5e7-80d7150b8943" />,
+    <img width="1879" height="851" alt="Screenshot_6" src="https://github.com/user-attachments/assets/e779ffab-3a19-4c67-b182-0057e55ebcc1" />
+    <img width="1898" height="794" alt="Screenshot_3" src="https://github.com/user-attachments/assets/9b2256fe-4141-42f4-bdef-4a55af7c8429" />
+    <img width="1829" height="824" alt="Screenshot_5" src="https://github.com/user-attachments/assets/d0fc9f39-4658-497b-914e-9009dee5b24d" />
+    <img width="1878" height="789" alt="Screenshot_4" src="https://github.com/user-attachments/assets/b6eb9a55-76a0-415c-9bae-d4f94d4b0171" />
 
 
+
+# ✨ Funcionalidades Core
+##📊 BI & KPIs em Tempo Real
+Visualizações dinâmicas integradas a sistemas de origem (ERP). Transformamos transações complexas em KPIs claros como Ticket Médio, Taxa de Ruptura e Margem de Contribuição.
+
+## 🔎 Flux IA (Análise Profunda)
+Nossa IA analisa o comportamento das vendas no período e gera um relatório de Otimização de Resultados e Eficiência Operacional. É o fim do "eu acho" e o início do "os dados mostram".
+
+## 📈 Predição & Prevenção
+Projeções de Vendas: Algoritmos que identificam sazonalidade e tendências.
+
+Análise de Ruptura: Identificação inteligente de falhas no estoque antes que elas afetem o faturamento.
+
+## 🛠️ Stack Técnica
+Linguagem: Python
+
+Interface: Streamlit
+
+IA/LLM: Google Gemini API / LangChain (Agentes)
+
+Dados: Pandas (ETL & Manipulação), NumPy
+
+Visualização: Plotly / Altair
+
+## ⚙️ Arquitetura e Engenharia de Contexto
+
+Diferente de soluções de chat genéricas, o Flux Dashboard utiliza um pipeline de dados inteligente:
+
+- **Data Sourcing:** Extração automatizada via `SQLAlchemy`.
+- **Contextual Switching:** O sistema monitora o estado da sessão no Streamlit. Ao navegar entre as abas (Home, Vendas, RH), o motor de IA troca automaticamente o conjunto de dados (DataFrame) e o "System Prompt" do consultor.
+- **RAG Adaptativo:** O Agente de Chat recebe um `chunk` dos dados processados no Pandas, permitindo que ele execute análises estatísticas em tempo real sobre os filtros aplicados pelo usuário.
 
 -----
